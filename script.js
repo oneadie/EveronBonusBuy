@@ -316,7 +316,7 @@ function calculateBonus(row) {
     else if (x >= 500) bonus = '25$';
     else if (x >= 200) bonus = '15$';
     else if (x >= 100) bonus = '10$';
-    else if (x === 0) bonus = 'утешалка 3$';
+    else if (x >= 0) bonus = 'утешалка 3$';
     else bonus = 'gg';
 
     row.cells[6].innerText = bonus;
@@ -405,4 +405,5 @@ function loadAppState() {
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
     updateTotals();
+
 }
