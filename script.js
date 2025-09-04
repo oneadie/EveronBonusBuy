@@ -307,8 +307,8 @@ function showWinnersSection() {
 function calculateBonus(row) {
     const price = parseFloat(row.cells[3].innerText) || 0;
     const payout = parseFloat(row.cells[4].innerText) || 0;
-    const stake = 20;
-    const x = price > 0 ? Math.max(0, Math.round((payout - price) / stake)) : 0;
+    const x = price > 0 ? Math.round((payout / price) * 100) : 0;
+    console.log(`Price: ${price}, Payout: ${payout}, x: ${x}`);
     row.cells[5].innerText = x + 'x';
 
     let bonus = '';
@@ -407,4 +407,5 @@ function loadAppState() {
     updateTotals();
 
 }
+
 
