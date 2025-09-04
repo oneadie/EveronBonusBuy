@@ -308,7 +308,6 @@ function calculateBonus(row) {
     const price = parseFloat(row.cells[3].innerText) || 0;
     const payout = parseFloat(row.cells[4].innerText) || 0;
     const x = price > 0 ? Math.round((payout / price) * 100) : 0;
-    console.log(`Price: ${price}, Payout: ${payout}, x: ${x}`);
     row.cells[5].innerText = x + 'x';
 
     let bonus = '';
@@ -316,7 +315,7 @@ function calculateBonus(row) {
     else if (x >= 600) bonus = '25$';
     else if (x >= 300) bonus = '15$';
     else if (x >= 200) bonus = '10$';
-    else if (x >= 100) bonus = 'утешалка 3$';
+    else if (x >= 100 || payout >= price) bonus = 'утешалка 3$';
     else bonus = 'gg';
 
     row.cells[6].innerText = bonus;
@@ -407,6 +406,7 @@ function loadAppState() {
     updateTotals();
 
 }
+
 
 
 
