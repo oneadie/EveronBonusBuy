@@ -312,10 +312,10 @@ function calculateBonus(row) {
 
     let bonus = '';
     if (x >= 1100) bonus = '50$';
-    else if (x >= 600) bonus = '25$';
-    else if (x >= 300) bonus = '15$';
-    else if (x >= 200) bonus = '10$';
-    else if (x >= 100 || payout >= price) bonus = 'утешалка 3$';
+    else if (x >= 600 && x < 1100) bonus = '25$';
+    else if (x >= 300 && x < 600) bonus = '15$';
+    else if (x >= 200 && x < 300) bonus = '10$';
+    else if (x >= 100 && x < 200) bonus = 'утешалка 3$';
     else bonus = 'gg';
 
     row.cells[6].innerText = bonus;
@@ -406,6 +406,7 @@ function loadAppState() {
     updateTotals();
 
 }
+
 
 
 
