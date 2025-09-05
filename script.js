@@ -3,11 +3,13 @@ let winnerId = 1;
 let participants = [];
 let winners = [];
 let animationDuration = 3;
+let isSingleMode = false;
 
 const parseButton = document.getElementById('parse-participants');
 const participantInput = document.getElementById('participant-input');
 const limitInput = document.getElementById('winner-limit');
 const startButton = document.getElementById('start-spin');
+const spinOneButton = document.getElementById('spin-one');
 const resetButtons = document.querySelectorAll('#reset-all');
 const addEveronButton = document.getElementById('add-everon');
 const participantsTableBody = document.getElementById('participants-table').querySelector('tbody');
@@ -31,11 +33,16 @@ window.addEventListener('load', loadAppState);
 parseButton.addEventListener('click', parseTelegramInput);
 limitInput.addEventListener('input', saveAppState);
 startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limitInput.value)));
+spinOneButton.addEventListener('click', () => initiateSingleMode(parseInt(limitInput.value)));
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
 closeModal.addEventListener('click', () => {
     multiModal.style.display = 'none';
-    showWinnersSection();
+    if (isSingleMode) {
+        finishSingleMode && finishSingleMode();
+    } else {
+        showWinnersSection();
+    }
 });
 addMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'block';
@@ -58,9 +65,7 @@ function parseTelegramInput() {
     let currentEntry = [];
 
     lines.forEach((line, index) => {
-        // Check if the line is a Telegram username/timestamp header
         if (line.match(/^[^,]+,\s*\[\d{2}\.\d{2}\.\d{4}\s+\d{2}:\d{2}\]/)) {
-            // If we have collected lines for the previous block, process them
             if (currentEntry.length > 0) {
                 const name = currentEntry.join(' ').trim();
                 if (name) {
@@ -74,11 +79,9 @@ function parseTelegramInput() {
             return;
         }
 
-        // Collect non-header lines for the current block
         currentEntry.push(line);
     });
 
-    // Process the last block if it exists
     if (currentEntry.length > 0) {
         const name = currentEntry.join(' ').trim();
         if (name) {
@@ -144,7 +147,6 @@ function addWinnerRow(person) {
         <td></td>
     `;
     row.cells[2].addEventListener('input', () => {
-        // Update the winners array when the name is edited
         const name = row.cells[2].textContent.trim();
         const index = winners.findIndex(w => w.name === person.name);
         if (index !== -1) {
@@ -188,27 +190,21 @@ function resetApplication() {
 
 function initiateMultiSelection(limit) {
     const currentParticipants = fetchParticipants();
+    const availableParticipants = currentParticipants.filter(p => !winners.some(w => w.name === p.name));
 
     if (currentParticipants.length === 0) {
         alert('Добавьте участников!');
         return;
     }
-    if (currentParticipants.length < limit) {
-        alert(`Недостаточно участников! Доступно ${currentParticipants.length}, нужно ${limit}.`);
-        return;
-    }
-
-    const availableParticipants = currentParticipants.filter(p => !winners.some(w => w.name === p.name));
     if (availableParticipants.length < limit) {
         alert(`Недостаточно доступных участников! Доступно ${availableParticipants.length}, нужно ${limit}.`);
         return;
     }
 
     const selectedWinners = [];
-    const tempParticipants = [...availableParticipants];
-    for (let i = 0; i < limit && tempParticipants.length > 0; i++) {
-        const winnerIndex = Math.floor(Math.random() * tempParticipants.length);
-        selectedWinners.push(tempParticipants.splice(winnerIndex, 1)[0]);
+    for (let i = 0; i < limit && availableParticipants.length > 0; i++) {
+        const winnerIndex = Math.floor(Math.random() * availableParticipants.length);
+        selectedWinners.push(availableParticipants.splice(winnerIndex, 1)[0]);
     }
 
     reelsContainer.innerHTML = '';
@@ -216,6 +212,9 @@ function initiateMultiSelection(limit) {
         alert('Не удалось выбрать победителей. Попробуйте снова.');
         return;
     }
+
+    isSingleMode = false;
+    multiModal.style.display = 'block';
 
     selectedWinners.forEach((winner, index) => {
         const slotMachine = document.createElement('div');
@@ -246,10 +245,12 @@ function initiateMultiSelection(limit) {
         const totalHeight = reelItems.length * itemHeight;
         reel.style.height = `${totalHeight}px`;
 
-        const winnerIndex = reelItems.findIndex(item => item.name === winner.name, currentParticipants.length);
-        const winnerPosition = (currentParticipants.length + winnerIndex) * itemHeight - highlightTop + itemHeight / 2;
+        const len = currentParticipants.length;
+        const ori = currentParticipants.findIndex(p => p.name === winner.name);
+        const winnerIndex = len + ori;
+        const winnerPosition = winnerIndex * itemHeight - highlightTop;
 
-        const timingFunction = currentParticipants.length <= 15
+        const timingFunction = len <= 15
             ? 'cubic-bezier(0.5, 0, 0.1, 1)'
             : 'cubic-bezier(0.25, 0, 0.1, 1)';
 
@@ -283,7 +284,6 @@ function initiateMultiSelection(limit) {
         }, animationDuration * 1000 + 300);
     });
 
-    multiModal.style.display = 'block';
     setTimeout(() => {
         multiModal.style.display = 'none';
         selectedWinners.forEach(winner => {
@@ -296,6 +296,166 @@ function initiateMultiSelection(limit) {
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
         showWinnersSection();
     }, animationDuration * 1000 + 1000);
+}
+
+function initiateSingleMode(totalLimit) {
+    const currentParticipants = fetchParticipants();
+    let availableParticipants = currentParticipants.filter(p => !winners.some(w => w.name === p.name));
+
+    if (currentParticipants.length === 0) {
+        alert('Добавьте участников!');
+        return;
+    }
+    if (availableParticipants.length < totalLimit) {
+        alert(`Недостаточно доступных участников! Доступно ${availableParticipants.length}, нужно ${totalLimit}.`);
+        return;
+    }
+
+    isSingleMode = true;
+    multiModal.style.display = 'block';
+    reelsContainer.innerHTML = '';
+
+    let selectedSoFar = [];
+    let remaining = totalLimit;
+
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.id = 'spin-buttons';
+    buttonsContainer.style.display = 'none';
+    buttonsContainer.style.justifyContent = 'center';
+    buttonsContainer.style.gap = '20px';
+    buttonsContainer.style.marginTop = '20px';
+    buttonsContainer.style.flexDirection = 'row';
+
+    const furtherBtn = createButton('Крутить дальше', spinSingle);
+    const stopBtn = createButton('Стоп', finishSingleMode);
+
+    buttonsContainer.appendChild(furtherBtn);
+    buttonsContainer.appendChild(stopBtn);
+
+    const modalContent = multiModal.querySelector('.modal-content');
+    modalContent.appendChild(buttonsContainer);
+
+    const winnersList = document.createElement('ul');
+    winnersList.id = 'temp-winners-list';
+    winnersList.style.listStyle = 'none';
+    winnersList.style.textAlign = 'center';
+    winnersList.style.marginTop = '20px';
+    modalContent.appendChild(winnersList);
+
+    spinSingle();
+
+    function spinSingle() {
+        if (remaining <= 0 || availableParticipants.length === 0) {
+            finishSingleMode();
+            return;
+        }
+
+        const winnerIdx = Math.floor(Math.random() * availableParticipants.length);
+        const winner = availableParticipants.splice(winnerIdx, 1)[0];
+
+        reelsContainer.innerHTML = '';
+
+        const slotMachine = document.createElement('div');
+        slotMachine.className = 'slot-machine';
+        slotMachine.innerHTML = `
+            <div class="reel-mask">
+                <ul class="reel" id="reel-0"></ul>
+            </div>
+            <div class="highlight-frame">
+                <div class="flapper"></div>
+            </div>
+            <div class="winner-announce">Победитель: <span id="winner-name-0"></span></div>
+        `;
+        reelsContainer.appendChild(slotMachine);
+
+        const reel = slotMachine.querySelector('#reel-0');
+        const reelItems = [...currentParticipants, ...currentParticipants, ...currentParticipants];
+        reelItems.forEach(person => {
+            const li = document.createElement('li');
+            li.textContent = person.name;
+            li.dataset.name = person.name;
+            reel.appendChild(li);
+        });
+
+        const itemHeight = reel.children[0]?.offsetHeight || 80;
+        const highlightFrame = slotMachine.querySelector('.highlight-frame');
+        const highlightTop = parseFloat(getComputedStyle(highlightFrame).top);
+        const totalHeight = reelItems.length * itemHeight;
+        reel.style.height = `${totalHeight}px`;
+
+        const len = currentParticipants.length;
+        const ori = currentParticipants.findIndex(p => p.name === winner.name);
+        const winnerIndex = len + ori;
+        const winnerPosition = winnerIndex * itemHeight - highlightTop;
+
+        const timingFunction = len <= 15
+            ? 'cubic-bezier(0.5, 0, 0.1, 1)'
+            : 'cubic-bezier(0.25, 0, 0.1, 1)';
+
+        setTimeout(() => {
+            reel.style.transition = `transform ${animationDuration}s ${timingFunction}`;
+            reel.style.transform = `translateY(-${winnerPosition}px)`;
+        }, 10);
+
+        setTimeout(() => {
+            const visibleItems = Array.from(reel.children);
+            const frameCenter = highlightTop + itemHeight / 2;
+            let closestItem = null;
+            let minDistance = Infinity;
+
+            visibleItems.forEach(item => {
+                const itemRect = item.getBoundingClientRect();
+                const itemCenter = itemRect.top + itemRect.height / 2;
+                const distance = Math.abs(itemCenter - (slotMachine.getBoundingClientRect().top + frameCenter));
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestItem = item;
+                }
+            });
+
+            if (closestItem && closestItem.dataset.name === winner.name) {
+                closestItem.classList.add('winner');
+                document.getElementById('winner-name-0').textContent = winner.name;
+
+                const li = document.createElement('li');
+                li.textContent = `Добавлен: ${winner.name}`;
+                winnersList.appendChild(li);
+
+                selectedSoFar.push(winner);
+                remaining--;
+
+                buttonsContainer.style.display = 'flex';
+                if (remaining <= 0) {
+                    furtherBtn.style.display = 'none';
+                }
+            } else {
+                console.error(`Winner mismatch. Expected: ${winner.name}, Got: ${closestItem ? closestItem.dataset.name : 'none'}`);
+            }
+        }, animationDuration * 1000 + 300);
+    }
+
+    function finishSingleMode() {
+        multiModal.style.display = 'none';
+        buttonsContainer.remove();
+        winnersList.remove();
+        selectedSoFar.forEach(winner => {
+            Array.from(participantsTableBody.rows).forEach(row => {
+                if (row.cells[1].textContent.trim() === winner.name) row.remove();
+            });
+            addWinnerRow(winner);
+        });
+        participantId = participantsTableBody.rows.length + 1;
+        Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
+        showWinnersSection();
+        isSingleMode = false;
+    }
+
+    function createButton(text, onClick) {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.addEventListener('click', onClick);
+        return btn;
+    }
 }
 
 function showWinnersSection() {
@@ -374,7 +534,6 @@ function loadAppState() {
     const winnerRows = winnersTableBody.rows;
     for (let row of winnerRows) {
         row.cells[2].addEventListener('input', () => {
-            // Update the winners array when the name is edited
             const name = row.cells[2].textContent.trim();
             const oldName = winners.find(w => w.name === row.cells[2].dataset.originalName)?.name;
             const index = winners.findIndex(w => w.name === oldName);
@@ -400,14 +559,7 @@ function loadAppState() {
             deleteWinner(removeBtn.parentElement.parentElement, row.cells[2].textContent);
             updateTotals();
         });
-        // Store the original name for reference
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
     updateTotals();
-
 }
-
-
-
-
-
