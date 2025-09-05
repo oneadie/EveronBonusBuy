@@ -111,7 +111,7 @@ section:hover {
 #controls {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 15px;
     align-items: center;
 }
 
@@ -138,32 +138,120 @@ input[type="number"] {
 }
 
 button {
-    padding: 15px 35px;
-    background: linear-gradient(45deg, #6242ff, #a887ff);
-    color: #ffffff;
+    padding: 14px 20px;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 1.2em;
-    width: 250px;
+    font-size: 1.1em;
+    width: 220px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(98, 66, 255, 0.5);
-    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 button:hover {
-    background: linear-gradient(45deg, #a887ff, #6242ff);
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(98, 66, 255, 0.7);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 button:active {
-    transform: scale(0.95);
+    transform: scale(0.98);
 }
 
-#start-spin, #add-everon, #add-more, #reset-all, #select-more {
-    margin: 20px 0;
+#parse-participants {
+    background: linear-gradient(45deg, #00cc88, #00ffaa);
+    color: #ffffff;
+}
+
+#parse-participants:hover {
+    background: linear-gradient(45deg, #00ffaa, #00cc88);
+}
+
+#spin-one {
+    background: linear-gradient(45deg, #ff9500, #ffcc00);
+    color: #ffffff;
+}
+
+#spin-one:hover {
+    background: linear-gradient(45deg, #ffcc00, #ff9500);
+}
+
+#start-spin {
+    background: linear-gradient(45deg, #6242ff, #a887ff);
+    color: #ffffff;
+}
+
+#start-spin:hover {
+    background: linear-gradient(45deg, #a887ff, #6242ff);
+}
+
+#reset-all {
+    background: linear-gradient(45deg, #ff4d4d, #ff8080);
+    color: #ffffff;
+}
+
+#reset-all:hover {
+    background: linear-gradient(45deg, #ff8080, #ff4d4d);
+}
+
+#add-everon {
+    background: linear-gradient(45deg, #1e90ff, #4ab8ff);
+    color: #ffffff;
+}
+
+#add-everon:hover {
+    background: linear-gradient(45deg, #4ab8ff, #1e90ff);
+}
+
+#add-more {
+    background: linear-gradient(45deg, #ff69b4, #ff99cc);
+    color: #ffffff;
+}
+
+#add-more:hover {
+    background: linear-gradient(45deg, #ff99cc, #ff69b4);
+}
+
+#select-more {
+    background: linear-gradient(45deg, #00cc88, #00ffaa);
+    color: #ffffff;
+}
+
+#select-more:hover {
+    background: linear-gradient(45deg, #00ffaa, #00cc88);
+}
+
+#spin-buttons button {
+    width: 180px;
+    padding: 12px 20px;
+    font-size: 1em;
+}
+
+#spin-buttons button:nth-child(1) {
+    background: linear-gradient(45deg, #ff9500, #ffcc00);
+    color: #ffffff;
+}
+
+#spin-buttons button:nth-child(1):hover {
+    background: linear-gradient(45deg, #ffcc00, #ff9500);
+}
+
+#spin-buttons button:nth-child(2) {
+    background: linear-gradient(45deg, #ff4d4d, #ff8080);
+    color: #ffffff;
+}
+
+#spin-buttons button:nth-child(2):hover {
+    background: linear-gradient(45deg, #ff8080, #ff4d4d);
+}
+
+#winners-section .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
 }
 
 h2 {
@@ -244,7 +332,7 @@ td[contenteditable="true"]:hover {
 }
 
 #winners-section {
-    margin-top: 100px;
+    margin-top: 40px;
     padding: 30px;
     background: linear-gradient(45deg, #1a1a3b, #2b2b5a);
     border-radius: 20px;
@@ -460,21 +548,29 @@ td[contenteditable="true"]:hover {
     animation: fade-in 1.2s ease-in;
 }
 
+#temp-winners-list li {
+    font-size: 1.2em;
+    margin: 5px 0;
+    color: #a887ff;
+}
+
 @media (max-width: 600px) {
     header h1 { font-size: 2.2em; }
     #streamer-icon { width: 60px; height: 60px; }
     section { padding: 20px; max-width: 100%; }
     #participant-input { height: 140px; font-size: 1.1em; }
-    button { padding: 12px 25px; width: 100%; max-width: 220px; }
+    button { padding: 12px 20px; width: 100%; max-width: 200px; font-size: 1em; }
     .reel li { font-size: 1.2em; height: 70px; line-height: 70px; }
     .highlight-frame { top: 85px; height: 70px; }
     .winner-announce { font-size: 1.5em; margin: 30px 0 0; }
     input[type="number"] { width: 120px; }
     .slot-machine { width: 150px; height: 220px; }
     .modal-content { width: 90%; }
-    #winners-section { margin-top: 80px; }
+    #winners-section { margin-top: 20px; }
+    #winners-section .button-group { gap: 10px; margin-bottom: 15px; }
     th, td { font-size: 0.8em; padding: 8px 4px; }
     .action-buttons button { width: 20px; height: 20px; font-size: 0.7em; }
+    #spin-buttons button { width: 140px; padding: 10px 15px; font-size: 0.9em; }
 }
 
 @media (max-width: 600px) {
