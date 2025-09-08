@@ -27,6 +27,25 @@ header {
     z-index: 1;
 }
 
+header a {
+    display: inline-block;
+    padding: 15px 30px;
+    background: linear-gradient(45deg, #6242ff, #a887ff);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 1.5em;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(98, 66, 255, 0.5);
+    transition: all 0.3s ease;
+}
+
+header a:hover {
+    background: linear-gradient(45deg, #a887ff, #6242ff);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(98, 66, 255, 0.7);
+}
+
 #streamer-icon {
     width: 90px;
     height: 90px;
@@ -606,4 +625,5 @@ td[contenteditable="true"]:hover {
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(-25px); }
     to { opacity: 1; transform: translateY(0); }
+
 }
