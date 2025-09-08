@@ -32,6 +32,10 @@
             <input type="range" id="min-speed" min="500" max="3000" value="1500" class="w-full mb-4">
             <label for="max-speed" class="text-white mb-2 block">Max Speed (ms): <span id="max-speed-value">4000</span></label>
             <input type="range" id="max-speed" min="1000" max="5000" value="4000" class="w-full mb-4">
+            <label for="min-display-time" class="text-white mb-2 block">Min Display Time (s): <span id="min-display-time-value">2</span></label>
+            <input type="range" id="min-display-time" min="1" max="10" value="2" step="0.1" class="w-full mb-4">
+            <label for="max-display-time" class="text-white mb-2 block">Max Display Time (s): <span id="max-display-time-value">5</span></label>
+            <input type="range" id="max-display-time" min="2" max="20" value="5" step="0.1" class="w-full mb-4">
             <div class="flex gap-2">
                 <button onclick="saveSettings()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-all duration-300">Save</button>
                 <button onclick="closeSettingsModal()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-all duration-300">Cancel</button>
