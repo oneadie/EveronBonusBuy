@@ -8,6 +8,8 @@ let minStickerSize = parseInt(localStorage.getItem('min-sticker-size')) || 20;
 let maxStickerSize = parseInt(localStorage.getItem('max-sticker-size')) || 60;
 let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500;
 let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000;
+let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2; // Новое: минимальное время отображения в секундах
+let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5; // Новое: максимальное время отображения в секундах
 const processedMessageIds = new Set();
 const container = document.getElementById('sticker-container');
 
@@ -21,6 +23,8 @@ window.onload = () => {
         document.getElementById('max-size').value = maxStickerSize;
         document.getElementById('min-speed').value = minSpeed;
         document.getElementById('max-speed').value = maxSpeed;
+        document.getElementById('min-display-time').value = minDisplayTime; // Новое
+        document.getElementById('max-display-time').value = maxDisplayTime; // Новое
         updateSliderValues();
     }
 
@@ -54,6 +58,8 @@ function updateSliderValues() {
     document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
     document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
     document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+    document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value; // Новое
+    document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value; // Новое
 
     // Update on input for real-time feedback
     document.getElementById('min-size').addEventListener('input', () => {
@@ -67,6 +73,12 @@ function updateSliderValues() {
     });
     document.getElementById('max-speed').addEventListener('input', () => {
         document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+    });
+    document.getElementById('min-display-time').addEventListener('input', () => { // Новое
+        document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value;
+    });
+    document.getElementById('max-display-time').addEventListener('input', () => { // Новое
+        document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value;
     });
 }
 
@@ -226,7 +238,7 @@ function displaySticker(name) {
             logDebug(`Fallback end position for ${name}: end(${endX.toFixed(2)},${endY.toFixed(2)})`);
         }
 
-        const duration = minSpeed + Math.random() * (maxSpeed - minSpeed);
+        const duration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000; // Конвертация секунд в миллисекунды
         const rotateSpeed = (Math.random() - 0.5) * 360;
 
         const startTime = performance.now();
@@ -310,6 +322,8 @@ function saveSettings() {
     const newMaxSize = parseInt(document.getElementById('max-size').value);
     const newMinSpeed = parseInt(document.getElementById('min-speed').value);
     const newMaxSpeed = parseInt(document.getElementById('max-speed').value);
+    const newMinDisplayTime = parseFloat(document.getElementById('min-display-time').value); // Новое
+    const newMaxDisplayTime = parseFloat(document.getElementById('max-display-time').value); // Новое
 
     if (newMinSize >= newMaxSize) {
         alert('Max sticker size must be greater than min sticker size');
@@ -319,6 +333,11 @@ function saveSettings() {
     if (newMinSpeed >= newMaxSpeed) {
         alert('Max speed must be greater than min speed');
         logDebug('Invalid speed settings: minSpeed >= maxSpeed');
+        return;
+    }
+    if (newMinDisplayTime >= newMaxDisplayTime) { // Новое
+        alert('Max display time must be greater than min display time');
+        logDebug('Invalid display time settings: minDisplayTime >= maxDisplayTime');
         return;
     }
 
@@ -333,10 +352,14 @@ function saveSettings() {
     maxStickerSize = newMaxSize;
     minSpeed = newMinSpeed;
     maxSpeed = newMaxSpeed;
+    minDisplayTime = newMinDisplayTime; // Новое
+    maxDisplayTime = newMaxDisplayTime; // Новое
     localStorage.setItem('min-sticker-size', minStickerSize);
     localStorage.setItem('max-sticker-size', maxStickerSize);
     localStorage.setItem('min-speed', minSpeed);
     localStorage.setItem('max-speed', maxSpeed);
-    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}ms, maxSpeed=${maxSpeed}ms`);
+    localStorage.setItem('min-display-time', minDisplayTime); // Новое
+    localStorage.setItem('max-display-time', maxDisplayTime); // Новое
+    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}ms, maxSpeed=${maxSpeed}ms, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
     closeSettingsModal();
 }
