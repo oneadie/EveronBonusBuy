@@ -8,8 +8,8 @@ let minStickerSize = parseInt(localStorage.getItem('min-sticker-size')) || 20;
 let maxStickerSize = parseInt(localStorage.getItem('max-sticker-size')) || 60;
 let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500;
 let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000;
-let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2; // Новое: минимальное время отображения в секундах
-let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5; // Новое: максимальное время отображения в секундах
+let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2;
+let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5;
 const processedMessageIds = new Set();
 const container = document.getElementById('sticker-container');
 
@@ -23,9 +23,15 @@ window.onload = () => {
         document.getElementById('max-size').value = maxStickerSize;
         document.getElementById('min-speed').value = minSpeed;
         document.getElementById('max-speed').value = maxSpeed;
-        document.getElementById('min-display-time').value = minDisplayTime; // Новое
-        document.getElementById('max-display-time').value = maxDisplayTime; // Новое
+        document.getElementById('min-display-time').value = minDisplayTime;
+        document.getElementById('max-display-time').value = maxDisplayTime;
         updateSliderValues();
+    } else {
+        // Force cache refresh in OBS
+        document.getElementById('sticker-container').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('sticker-container').style.display = 'block';
+        }, 100);
     }
 
     // Verify container size
@@ -58,10 +64,9 @@ function updateSliderValues() {
     document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
     document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
     document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
-    document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value; // Новое
-    document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value; // Новое
+    document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value;
+    document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value;
 
-    // Update on input for real-time feedback
     document.getElementById('min-size').addEventListener('input', () => {
         document.getElementById('min-size-value').textContent = document.getElementById('min-size').value;
     });
@@ -74,10 +79,10 @@ function updateSliderValues() {
     document.getElementById('max-speed').addEventListener('input', () => {
         document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
     });
-    document.getElementById('min-display-time').addEventListener('input', () => { // Новое
+    document.getElementById('min-display-time').addEventListener('input', () => {
         document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value;
     });
-    document.getElementById('max-display-time').addEventListener('input', () => { // Новое
+    document.getElementById('max-display-time').addEventListener('input', () => {
         document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value;
     });
 }
@@ -104,7 +109,7 @@ async function startChat() {
 
 function connectWebSocket() {
     if (connected && ws && ws.readyState === WebSocket.OPEN) {
-        return;
+        ws.close(); // Закрываем старое соединение перед новым
     }
     if (ws) {
         ws.close();
@@ -186,7 +191,7 @@ function displaySticker(name) {
             logDebug(`No valid image found for ${name}`);
             return;
         }
-        img.src = `emojis/${name}.${extensions[extensionIndex]}`;
+        img.src = `emojis/${name}.${extensions[extensionIndex]}?_=${Date.now()}`; // Добавляем временную метку для избежания кэша
         extensionIndex++;
     };
 
@@ -322,8 +327,8 @@ function saveSettings() {
     const newMaxSize = parseInt(document.getElementById('max-size').value);
     const newMinSpeed = parseInt(document.getElementById('min-speed').value);
     const newMaxSpeed = parseInt(document.getElementById('max-speed').value);
-    const newMinDisplayTime = parseFloat(document.getElementById('min-display-time').value); // Новое
-    const newMaxDisplayTime = parseFloat(document.getElementById('max-display-time').value); // Новое
+    const newMinDisplayTime = parseFloat(document.getElementById('min-display-time').value);
+    const newMaxDisplayTime = parseFloat(document.getElementById('max-display-time').value);
 
     if (newMinSize >= newMaxSize) {
         alert('Max sticker size must be greater than min sticker size');
@@ -335,31 +340,40 @@ function saveSettings() {
         logDebug('Invalid speed settings: minSpeed >= maxSpeed');
         return;
     }
-    if (newMinDisplayTime >= newMaxDisplayTime) { // Новое
+    if (newMinDisplayTime >= newMaxDisplayTime) {
         alert('Max display time must be greater than min display time');
         logDebug('Invalid display time settings: minDisplayTime >= maxDisplayTime');
         return;
     }
 
-    if (newChannel) {
+    if (newChannel && newChannel !== channel) {
         channel = newChannel;
         localStorage.setItem('streamer-channel', channel);
         logDebug(`Channel updated to ${channel}`);
         reconnectAttempts = 0;
+        processedMessageIds.clear(); // Очищаем обработанные сообщения для нового канала
         startChat();
     }
     minStickerSize = newMinSize;
     maxStickerSize = newMaxSize;
     minSpeed = newMinSpeed;
     maxSpeed = newMaxSpeed;
-    minDisplayTime = newMinDisplayTime; // Новое
-    maxDisplayTime = newMaxDisplayTime; // Новое
+    minDisplayTime = newMinDisplayTime;
+    maxDisplayTime = newMaxDisplayTime;
     localStorage.setItem('min-sticker-size', minStickerSize);
     localStorage.setItem('max-sticker-size', maxStickerSize);
     localStorage.setItem('min-speed', minSpeed);
     localStorage.setItem('max-speed', maxSpeed);
-    localStorage.setItem('min-display-time', minDisplayTime); // Новое
-    localStorage.setItem('max-display-time', maxDisplayTime); // Новое
+    localStorage.setItem('min-display-time', minDisplayTime);
+    localStorage.setItem('max-display-time', maxDisplayTime);
     logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}ms, maxSpeed=${maxSpeed}ms, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
+    
+    // Force refresh in OBS
+    if (new URLSearchParams(window.location.search).has('obs')) {
+        document.getElementById('sticker-container').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('sticker-container').style.display = 'block';
+        }, 100);
+    }
     closeSettingsModal();
 }
