@@ -6,17 +6,33 @@ const maxReconnectAttempts = 5;
 let channel = localStorage.getItem('streamer-channel') || 'everonn';
 let minStickerSize = parseInt(localStorage.getItem('min-sticker-size')) || 20;
 let maxStickerSize = parseInt(localStorage.getItem('max-sticker-size')) || 60;
-let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500;
-let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000;
-let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2;
-let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5;
+let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500; // Скорость в пикселях/сек
+let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000; // Скорость в пикселях/сек
+let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2; // Время отображения в секундах
+let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5; // Время отображения в секундах
 const processedMessageIds = new Set();
 const container = document.getElementById('sticker-container');
 
 window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const isOBS = urlParams.has('obs');
-    if (!isOBS) {
+    
+    // Загружаем параметры из URL для OBS, если они есть
+    if (isOBS) {
+        channel = urlParams.get('channel') || channel;
+        minStickerSize = parseInt(urlParams.get('minSize')) || minStickerSize;
+        maxStickerSize = parseInt(urlParams.get('maxSize')) || maxStickerSize;
+        minSpeed = parseInt(urlParams.get('minSpeed')) || minSpeed;
+        maxSpeed = parseInt(urlParams.get('maxSpeed')) || maxSpeed;
+        minDisplayTime = parseFloat(urlParams.get('minDisplayTime')) || minDisplayTime;
+        maxDisplayTime = parseFloat(urlParams.get('maxDisplayTime')) || maxDisplayTime;
+        
+        // Force cache refresh in OBS
+        document.getElementById('sticker-container').style.display = 'none';
+        setTimeout(() => {
+            document.getElementById('sticker-container').style.display = 'block';
+        }, 100);
+    } else {
         document.getElementById('control-panel').style.display = 'flex';
         document.getElementById('streamer-channel').value = channel;
         document.getElementById('min-size').value = minStickerSize;
@@ -26,12 +42,6 @@ window.onload = () => {
         document.getElementById('min-display-time').value = minDisplayTime;
         document.getElementById('max-display-time').value = maxDisplayTime;
         updateSliderValues();
-    } else {
-        // Force cache refresh in OBS
-        document.getElementById('sticker-container').style.display = 'none';
-        setTimeout(() => {
-            document.getElementById('sticker-container').style.display = 'block';
-        }, 100);
     }
 
     // Verify container size
@@ -243,7 +253,12 @@ function displaySticker(name) {
             logDebug(`Fallback end position for ${name}: end(${endX.toFixed(2)},${endY.toFixed(2)})`);
         }
 
-        const duration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000; // Конвертация секунд в миллисекунды
+        // Используем minSpeed и maxSpeed для определения скорости (пикселей/сек)
+        const speed = minSpeed + Math.random() * (maxSpeed - minSpeed); // Скорость в пикселях/сек
+        const duration = Math.min(
+            distance / speed * 1000, // Длительность = расстояние / скорость (в мс)
+            (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000 // Ограничение длительностью
+        );
         const rotateSpeed = (Math.random() - 0.5) * 360;
 
         const startTime = performance.now();
@@ -276,7 +291,7 @@ function displaySticker(name) {
         }
 
         requestAnimationFrame(animate);
-        logDebug(`Sticker ${name} animation started: start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance ${distance.toFixed(2)}px, duration ${duration}ms, size ${size}px`);
+        logDebug(`Sticker ${name} animation started: start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance ${distance.toFixed(2)}px, duration ${duration.toFixed(2)}ms, speed ${speed.toFixed(2)}px/s, size ${size}px`);
     };
 
     img.onerror = () => {
@@ -292,7 +307,7 @@ function testSticker() {
 }
 
 function generateOBSLink() {
-    const url = 'https://oneadie.github.io/EveronBonusBuy/widjet.html?obs=1';
+    const url = `https://oneadie.github.io/EveronBonusBuy/widjet.html?obs=1&channel=${encodeURIComponent(channel)}&minSize=${minStickerSize}&maxSize=${maxStickerSize}&minSpeed=${minSpeed}&maxSpeed=${maxSpeed}&minDisplayTime=${minDisplayTime}&maxDisplayTime=${maxDisplayTime}&_=${Date.now()}`;
     const input = document.getElementById('obs-url');
     input.value = url;
     input.select();
@@ -366,7 +381,7 @@ function saveSettings() {
     localStorage.setItem('max-speed', maxSpeed);
     localStorage.setItem('min-display-time', minDisplayTime);
     localStorage.setItem('max-display-time', maxDisplayTime);
-    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}ms, maxSpeed=${maxSpeed}ms, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
+    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}px/s, maxSpeed=${maxSpeed}px/s, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
     
     // Force refresh in OBS
     if (new URLSearchParams(window.location.search).has('obs')) {
