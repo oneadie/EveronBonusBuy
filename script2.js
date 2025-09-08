@@ -6,8 +6,8 @@ const maxReconnectAttempts = 5;
 let channel = localStorage.getItem('streamer-channel') || 'everonn';
 let minStickerSize = parseInt(localStorage.getItem('min-sticker-size')) || 20;
 let maxStickerSize = parseInt(localStorage.getItem('max-sticker-size')) || 60;
-let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500; // Скорость в пикселях/сек
-let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000; // Скорость в пикселях/сек
+let minSpeed = parseInt(localStorage.getItem('min-speed')) || 1500; // Время на 1000 пикселей (мс), большее = медленнее
+let maxSpeed = parseInt(localStorage.getItem('max-speed')) || 4000; // Время на 1000 пикселей (мс), большее = медленнее
 let minDisplayTime = parseFloat(localStorage.getItem('min-display-time')) || 2; // Время отображения в секундах
 let maxDisplayTime = parseFloat(localStorage.getItem('max-display-time')) || 5; // Время отображения в секундах
 const processedMessageIds = new Set();
@@ -72,8 +72,8 @@ function logDebug(message) {
 function updateSliderValues() {
     document.getElementById('min-size-value').textContent = document.getElementById('min-size').value;
     document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
-    document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
-    document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+    document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value + ' ms/1000px';
+    document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value + ' ms/1000px';
     document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value;
     document.getElementById('max-display-time-value').textContent = document.getElementById('max-display-time').value;
 
@@ -84,10 +84,10 @@ function updateSliderValues() {
         document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
     });
     document.getElementById('min-speed').addEventListener('input', () => {
-        document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
+        document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value + ' ms/1000px';
     });
     document.getElementById('max-speed').addEventListener('input', () => {
-        document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+        document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value + ' ms/1000px';
     });
     document.getElementById('min-display-time').addEventListener('input', () => {
         document.getElementById('min-display-time-value').textContent = document.getElementById('min-display-time').value;
@@ -253,12 +253,11 @@ function displaySticker(name) {
             logDebug(`Fallback end position for ${name}: end(${endX.toFixed(2)},${endY.toFixed(2)})`);
         }
 
-        // Используем minSpeed и maxSpeed для определения скорости (пикселей/сек)
-        const speed = minSpeed + Math.random() * (maxSpeed - minSpeed); // Скорость в пикселях/сек
-        const duration = Math.min(
-            distance / speed * 1000, // Длительность = расстояние / скорость (в мс)
-            (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000 // Ограничение длительностью
-        );
+        // Используем minSpeed и maxSpeed как время на 1000 пикселей (мс), большее = медленнее
+        const speedFactor = minSpeed + Math.random() * (maxSpeed - minSpeed); // Время на 1000 пикселей (мс)
+        const baseDuration = (distance / 1000) * speedFactor; // Длительность на основе расстояния
+        const displayDuration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000; // Ограничение длительностью
+        const duration = Math.max(baseDuration, displayDuration); // Берем большее для медленного движения
         const rotateSpeed = (Math.random() - 0.5) * 360;
 
         const startTime = performance.now();
@@ -291,7 +290,7 @@ function displaySticker(name) {
         }
 
         requestAnimationFrame(animate);
-        logDebug(`Sticker ${name} animation started: start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance ${distance.toFixed(2)}px, duration ${duration.toFixed(2)}ms, speed ${speed.toFixed(2)}px/s, size ${size}px`);
+        logDebug(`Sticker ${name} animation started: start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance ${distance.toFixed(2)}px, duration ${duration.toFixed(2)}ms, speedFactor ${speedFactor.toFixed(2)}ms/1000px, size ${size}px`);
     };
 
     img.onerror = () => {
@@ -381,7 +380,7 @@ function saveSettings() {
     localStorage.setItem('max-speed', maxSpeed);
     localStorage.setItem('min-display-time', minDisplayTime);
     localStorage.setItem('max-display-time', maxDisplayTime);
-    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}px/s, maxSpeed=${maxSpeed}px/s, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
+    logDebug(`Settings saved: minSize=${minStickerSize}px, maxSize=${maxStickerSize}px, minSpeed=${minSpeed}ms/1000px, maxSpeed=${maxSpeed}ms/1000px, minDisplayTime=${minDisplayTime}s, maxDisplayTime=${maxDisplayTime}s`);
     
     // Force refresh in OBS
     if (new URLSearchParams(window.location.search).has('obs')) {
