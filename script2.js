@@ -33,6 +33,11 @@ window.onload = () => {
         container.style.setProperty('height', '1080px', 'important');
     }
 
+    // Add click event listener for debugging
+    document.getElementById('control-panel').addEventListener('click', (e) => {
+        logDebug(`Control panel clicked: target=${e.target.tagName}, class=${e.target.className}`);
+    });
+
     startChat();
 };
 
@@ -49,6 +54,20 @@ function updateSliderValues() {
     document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
     document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
     document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+
+    // Update on input for real-time feedback
+    document.getElementById('min-size').addEventListener('input', () => {
+        document.getElementById('min-size-value').textContent = document.getElementById('min-size').value;
+    });
+    document.getElementById('max-size').addEventListener('input', () => {
+        document.getElementById('max-size-value').textContent = document.getElementById('max-size').value;
+    });
+    document.getElementById('min-speed').addEventListener('input', () => {
+        document.getElementById('min-speed-value').textContent = document.getElementById('min-speed').value;
+    });
+    document.getElementById('max-speed').addEventListener('input', () => {
+        document.getElementById('max-speed-value').textContent = document.getElementById('max-speed').value;
+    });
 }
 
 async function startChat() {
@@ -256,13 +275,13 @@ function testSticker() {
 }
 
 function generateOBSLink() {
-    const url = `file://${window.location.pathname}?obs=1`;
+    const url = 'https://oneadie.github.io/EveronBonusBuy/widjet.html?obs=1';
     const input = document.getElementById('obs-url');
     input.value = url;
     input.select();
     navigator.clipboard.writeText(url).then(() => {
         alert('OBS URL copied to clipboard! Use this in OBS Browser Source to hide the control panel.');
-        logDebug('OBS URL generated and copied');
+        logDebug('OBS URL generated and copied: ' + url);
     });
 }
 
