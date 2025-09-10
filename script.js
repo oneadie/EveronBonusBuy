@@ -4,6 +4,7 @@ let participants = [];
 let winners = [];
 let animationDuration = 3;
 let isSingleMode = false;
+let selectedSoFar = [];
 
 const parseButton = document.getElementById('parse-participants');
 const participantInput = document.getElementById('participant-input');
@@ -33,14 +34,14 @@ window.addEventListener('load', loadAppState);
 parseButton.addEventListener('click', parseTelegramInput);
 limitInput.addEventListener('input', saveAppState);
 startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limitInput.value)));
-spinOneButton.addEventListener('click', () => initiateSingleMode(parseInt(limitInput.value)));
+spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
 closeModal.addEventListener('click', () => {
-    multiModal.style.display = 'none';
     if (isSingleMode) {
         finishSingleMode && finishSingleMode();
     } else {
+        multiModal.style.display = 'none';
         showWinnersSection();
     }
 });
@@ -135,13 +136,13 @@ function fetchParticipants() {
     return participants;
 }
 
-function addWinnerRow(person) {
+function addWinnerRow(person, price = '') {
     const row = winnersTableBody.insertRow();
     row.innerHTML = `
         <td><button class="remove-btn">✕</button></td>
         <td>${winnerId++}</td>
         <td contenteditable="true">${person.name}</td>
-        <td contenteditable="true"></td>
+        <td contenteditable="true">${price}</td>
         <td contenteditable="true"></td>
         <td></td>
         <td></td>
@@ -154,7 +155,11 @@ function addWinnerRow(person) {
         }
         saveAppState();
     });
-    row.cells[3].addEventListener('input', saveAppState);
+    row.cells[3].addEventListener('input', () => {
+        calculateBonus(row);
+        updateTotals();
+        saveAppState();
+    });
     row.cells[4].addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
@@ -169,7 +174,7 @@ function addWinnerRow(person) {
         deleteWinner(row, person.name);
         updateTotals();
     });
-    winners.push(person);
+    winners.push({ name: person.name, price });
     updateTotals();
     saveAppState();
 }
@@ -185,6 +190,8 @@ function deleteWinner(row, name) {
 
 function resetApplication() {
     localStorage.clear();
+    selectedSoFar = [];
+    isSingleMode = false;
     window.location.reload();
 }
 
@@ -298,7 +305,7 @@ function initiateMultiSelection(limit) {
     }, animationDuration * 1000 + 1000);
 }
 
-function initiateSingleMode(totalLimit) {
+function initiateSingleMode() {
     const currentParticipants = fetchParticipants();
     let availableParticipants = currentParticipants.filter(p => !winners.some(w => w.name === p.name));
 
@@ -306,8 +313,8 @@ function initiateSingleMode(totalLimit) {
         alert('Добавьте участников!');
         return;
     }
-    if (availableParticipants.length < totalLimit) {
-        alert(`Недостаточно доступных участников! Доступно ${availableParticipants.length}, нужно ${totalLimit}.`);
+    if (availableParticipants.length === 0) {
+        alert('Нет доступных участников!');
         return;
     }
 
@@ -315,8 +322,23 @@ function initiateSingleMode(totalLimit) {
     multiModal.style.display = 'block';
     reelsContainer.innerHTML = '';
 
-    let selectedSoFar = [];
-    let remaining = totalLimit;
+    const tempTable = document.createElement('table');
+    tempTable.id = 'temp-winners-table';
+    tempTable.innerHTML = `
+        <thead>
+            <tr>
+                <th></th>
+                <th>#</th>
+                <th>Имя</th>
+                <th>Цена бонуса</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    const tempTbody = tempTable.querySelector('tbody');
+
+    const modalContent = multiModal.querySelector('.modal-content');
+    modalContent.appendChild(tempTable);
 
     const buttonsContainer = document.createElement('div');
     buttonsContainer.id = 'spin-buttons';
@@ -331,21 +353,43 @@ function initiateSingleMode(totalLimit) {
 
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
-
-    const modalContent = multiModal.querySelector('.modal-content');
     modalContent.appendChild(buttonsContainer);
 
-    const winnersList = document.createElement('ul');
-    winnersList.id = 'temp-winners-list';
-    winnersList.style.listStyle = 'none';
-    winnersList.style.textAlign = 'center';
-    winnersList.style.marginTop = '20px';
-    modalContent.appendChild(winnersList);
+    selectedSoFar.forEach(s => {
+        const row = tempTbody.insertRow();
+        row.innerHTML = `
+            <td><button class="remove-btn">✕</button></td>
+            <td>${selectedSoFar.indexOf(s) + 1}</td>
+            <td contenteditable="true">${s.name}</td>
+            <td contenteditable="true">${s.price}</td>
+        `;
+        row.cells[2].addEventListener('input', () => {
+            const index = Array.from(tempTbody.rows).indexOf(row);
+            selectedSoFar[index].name = row.cells[2].textContent.trim();
+            saveAppState();
+        });
+        row.cells[3].addEventListener('input', () => {
+            const index = Array.from(tempTbody.rows).indexOf(row);
+            selectedSoFar[index].price = row.cells[3].textContent.trim();
+            saveAppState();
+        });
+        row.querySelector('.remove-btn').addEventListener('click', () => {
+            const index = Array.from(tempTbody.rows).indexOf(row);
+            availableParticipants.push({ name: row.cells[2].textContent.trim() });
+            selectedSoFar.splice(index, 1);
+            row.remove();
+            Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
+            saveAppState();
+            if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
+                finishSingleMode();
+            }
+        });
+    });
 
     spinSingle();
 
     function spinSingle() {
-        if (remaining <= 0 || availableParticipants.length === 0) {
+        if (availableParticipants.length === 0) {
             finishSingleMode();
             return;
         }
@@ -417,15 +461,42 @@ function initiateSingleMode(totalLimit) {
                 closestItem.classList.add('winner');
                 document.getElementById('winner-name-0').textContent = winner.name;
 
-                const li = document.createElement('li');
-                li.textContent = `Добавлен: ${winner.name}`;
-                winnersList.appendChild(li);
+                selectedSoFar.push({ name: winner.name, price: '' });
 
-                selectedSoFar.push(winner);
-                remaining--;
+                const row = tempTbody.insertRow();
+                row.innerHTML = `
+                    <td><button class="remove-btn">✕</button></td>
+                    <td>${selectedSoFar.length}</td>
+                    <td contenteditable="true">${winner.name}</td>
+                    <td contenteditable="true"></td>
+                `;
+
+                row.cells[2].addEventListener('input', () => {
+                    const index = Array.from(tempTbody.rows).indexOf(row);
+                    selectedSoFar[index].name = row.cells[2].textContent.trim();
+                    saveAppState();
+                });
+
+                row.cells[3].addEventListener('input', () => {
+                    const index = Array.from(tempTbody.rows).indexOf(row);
+                    selectedSoFar[index].price = row.cells[3].textContent.trim();
+                    saveAppState();
+                });
+
+                row.querySelector('.remove-btn').addEventListener('click', () => {
+                    const index = Array.from(tempTbody.rows).indexOf(row);
+                    availableParticipants.push({ name: row.cells[2].textContent.trim() });
+                    selectedSoFar.splice(index, 1);
+                    row.remove();
+                    Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
+                    saveAppState();
+                    if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
+                        finishSingleMode();
+                    }
+                });
 
                 buttonsContainer.style.display = 'flex';
-                if (remaining <= 0) {
+                if (availableParticipants.length === 0) {
                     furtherBtn.style.display = 'none';
                 }
             } else {
@@ -437,17 +508,19 @@ function initiateSingleMode(totalLimit) {
     function finishSingleMode() {
         multiModal.style.display = 'none';
         buttonsContainer.remove();
-        winnersList.remove();
-        selectedSoFar.forEach(winner => {
+        tempTable.remove();
+        selectedSoFar.forEach(s => {
             Array.from(participantsTableBody.rows).forEach(row => {
-                if (row.cells[1].textContent.trim() === winner.name) row.remove();
+                if (row.cells[1].textContent.trim() === s.name) row.remove();
             });
-            addWinnerRow(winner);
+            addWinnerRow({ name: s.name }, s.price);
         });
         participantId = participantsTableBody.rows.length + 1;
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
-        showWinnersSection();
+        selectedSoFar = [];
         isSingleMode = false;
+        showWinnersSection();
+        saveAppState();
     }
 
     function createButton(text, onClick) {
@@ -494,6 +567,12 @@ function updateTotals() {
 
     totalSpentSpan.textContent = totalSpent.toFixed(2);
     totalReceivedSpan.textContent = totalReceived.toFixed(2);
+
+    let percent = totalSpent > 0 ? (totalReceived / totalSpent * 100).toFixed(2) : 0.00;
+    const paybackSpan = document.getElementById('payback-percent');
+    paybackSpan.textContent = percent + '%';
+    paybackSpan.classList.remove('green', 'red');
+    paybackSpan.classList.add(percent >= 100 ? 'green' : 'red');
 }
 
 function saveAppState() {
@@ -504,7 +583,9 @@ function saveAppState() {
         winnerId,
         limit: limitInput.value,
         additionalLimit: additionalLimitInput.value,
-        winnersHtml: winnersTableBody.innerHTML
+        winnersHtml: winnersTableBody.innerHTML,
+        isSingleMode,
+        selectedSoFar
     };
     localStorage.setItem('appState', JSON.stringify(state));
 }
@@ -515,6 +596,8 @@ function loadAppState() {
 
     participantId = state.participantId || 1;
     winnerId = state.winnerId || 1;
+    isSingleMode = state.isSingleMode || false;
+    selectedSoFar = state.selectedSoFar || [];
 
     limitInput.value = state.limit || '10';
     additionalLimitInput.value = state.additionalLimit || '5';
@@ -543,7 +626,11 @@ function loadAppState() {
             }
             saveAppState();
         });
-        row.cells[3].addEventListener('input', saveAppState);
+        row.cells[3].addEventListener('input', () => {
+            calculateBonus(row);
+            updateTotals();
+            saveAppState();
+        });
         row.cells[4].addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
@@ -561,5 +648,10 @@ function loadAppState() {
         });
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
+
+    if (isSingleMode) {
+        initiateSingleMode();
+    }
+
     updateTotals();
 }
