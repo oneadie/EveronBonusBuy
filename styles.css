@@ -415,6 +415,69 @@ td[contenteditable="true"]:hover {
     box-shadow: 0 0 10px rgba(255, 77, 77, 0.6);
 }
 
+#temp-winners-table {
+    width: 90%;
+    margin: 20px auto;
+    max-width: 600px;
+    table-layout: auto;
+    font-size: 1em;
+    max-height: 350px;
+    overflow-y: auto;
+    display: block;
+}
+
+#temp-winners-table th, #temp-winners-table td {
+    padding: 10px 6px;
+    font-size: 1em;
+}
+
+#temp-winners-table td[contenteditable="true"] {
+    font-size: 1em;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: text;
+    transition: background 0.3s ease;
+}
+
+#temp-winners-table td[contenteditable="true"]:hover {
+    background: rgba(98, 66, 255, 0.3);
+}
+
+#temp-winners-table th:nth-child(1), #temp-winners-table td:nth-child(1) { width: 8%; }
+#temp-winners-table th:nth-child(2), #temp-winners-table td:nth-child(2) { width: 8%; }
+#temp-winners-table th:nth-child(3), #temp-winners-table td:nth-child(3) { width: 60%; }
+#temp-winners-table th:nth-child(4), #temp-winners-table td:nth-child(4) { width: 24%; }
+
+#temp-winners-table .action-buttons button {
+    margin: 0;
+    padding: 0;
+    font-size: 0.6em;
+    width: 30px !important;
+    height: 30px !important;
+    line-height: 1;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    box-sizing: border-box;
+}
+
+#temp-winners-table .remove-btn {
+    background: #ff4d4d;
+    border-radius: 4px;
+    width: 30px !important;
+    height: 30px !important;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#temp-winners-table .remove-btn:hover {
+    background: #e63939;
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
+}
+
 #totals-counter {
     margin-top: 20px;
     text-align: center;
@@ -429,6 +492,14 @@ td[contenteditable="true"]:hover {
 #totals-counter span {
     font-weight: bold;
     color: #ffffff;
+}
+
+#payback-percent.green {
+    color: green;
+}
+
+#payback-percent.red {
+    color: red;
 }
 
 .modal {
@@ -590,6 +661,8 @@ td[contenteditable="true"]:hover {
     th, td { font-size: 0.8em; padding: 8px 4px; }
     .action-buttons button { width: 20px; height: 20px; font-size: 0.7em; }
     #spin-buttons button { width: 140px; padding: 10px 15px; font-size: 0.9em; }
+    #temp-winners-table .action-buttons button { width: 24px; height: 24px; font-size: 0.5em; }
+    #temp-winners-table th, #temp-winners-table td { font-size: 0.9em; }
 }
 
 @media (max-width: 600px) {
@@ -625,5 +698,4 @@ td[contenteditable="true"]:hover {
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(-25px); }
     to { opacity: 1; transform: translateY(0); }
-
 }
