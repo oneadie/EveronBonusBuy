@@ -4,7 +4,6 @@ let participants = [];
 let winners = [];
 let animationDuration = 3;
 let isSingleMode = false;
-let selectedSoFar = [];
 
 const parseButton = document.getElementById('parse-participants');
 const participantInput = document.getElementById('participant-input');
@@ -38,10 +37,10 @@ spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
 closeModal.addEventListener('click', () => {
+    multiModal.style.display = 'none';
     if (isSingleMode) {
         finishSingleMode && finishSingleMode();
     } else {
-        multiModal.style.display = 'none';
         showWinnersSection();
     }
 });
@@ -155,11 +154,7 @@ function addWinnerRow(person, price = '') {
         }
         saveAppState();
     });
-    row.cells[3].addEventListener('input', () => {
-        calculateBonus(row);
-        updateTotals();
-        saveAppState();
-    });
+    row.cells[3].addEventListener('input', saveAppState);
     row.cells[4].addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
@@ -174,7 +169,7 @@ function addWinnerRow(person, price = '') {
         deleteWinner(row, person.name);
         updateTotals();
     });
-    winners.push({ name: person.name, price });
+    winners.push(person);
     updateTotals();
     saveAppState();
 }
@@ -190,8 +185,6 @@ function deleteWinner(row, name) {
 
 function resetApplication() {
     localStorage.clear();
-    selectedSoFar = [];
-    isSingleMode = false;
     window.location.reload();
 }
 
@@ -322,6 +315,8 @@ function initiateSingleMode() {
     multiModal.style.display = 'block';
     reelsContainer.innerHTML = '';
 
+    let selectedSoFar = [];
+
     const tempTable = document.createElement('table');
     tempTable.id = 'temp-winners-table';
     tempTable.innerHTML = `
@@ -354,37 +349,6 @@ function initiateSingleMode() {
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
     modalContent.appendChild(buttonsContainer);
-
-    selectedSoFar.forEach(s => {
-        const row = tempTbody.insertRow();
-        row.innerHTML = `
-            <td><button class="remove-btn">✕</button></td>
-            <td>${selectedSoFar.indexOf(s) + 1}</td>
-            <td contenteditable="true">${s.name}</td>
-            <td contenteditable="true">${s.price}</td>
-        `;
-        row.cells[2].addEventListener('input', () => {
-            const index = Array.from(tempTbody.rows).indexOf(row);
-            selectedSoFar[index].name = row.cells[2].textContent.trim();
-            saveAppState();
-        });
-        row.cells[3].addEventListener('input', () => {
-            const index = Array.from(tempTbody.rows).indexOf(row);
-            selectedSoFar[index].price = row.cells[3].textContent.trim();
-            saveAppState();
-        });
-        row.querySelector('.remove-btn').addEventListener('click', () => {
-            const index = Array.from(tempTbody.rows).indexOf(row);
-            availableParticipants.push({ name: row.cells[2].textContent.trim() });
-            selectedSoFar.splice(index, 1);
-            row.remove();
-            Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
-            saveAppState();
-            if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
-                finishSingleMode();
-            }
-        });
-    });
 
     spinSingle();
 
@@ -474,13 +438,11 @@ function initiateSingleMode() {
                 row.cells[2].addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
                     selectedSoFar[index].name = row.cells[2].textContent.trim();
-                    saveAppState();
                 });
 
                 row.cells[3].addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
                     selectedSoFar[index].price = row.cells[3].textContent.trim();
-                    saveAppState();
                 });
 
                 row.querySelector('.remove-btn').addEventListener('click', () => {
@@ -489,7 +451,6 @@ function initiateSingleMode() {
                     selectedSoFar.splice(index, 1);
                     row.remove();
                     Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
-                    saveAppState();
                     if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
                         finishSingleMode();
                     }
@@ -517,10 +478,8 @@ function initiateSingleMode() {
         });
         participantId = participantsTableBody.rows.length + 1;
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
-        selectedSoFar = [];
-        isSingleMode = false;
         showWinnersSection();
-        saveAppState();
+        isSingleMode = false;
     }
 
     function createButton(text, onClick) {
@@ -583,9 +542,7 @@ function saveAppState() {
         winnerId,
         limit: limitInput.value,
         additionalLimit: additionalLimitInput.value,
-        winnersHtml: winnersTableBody.innerHTML,
-        isSingleMode,
-        selectedSoFar
+        winnersHtml: winnersTableBody.innerHTML
     };
     localStorage.setItem('appState', JSON.stringify(state));
 }
@@ -596,8 +553,6 @@ function loadAppState() {
 
     participantId = state.participantId || 1;
     winnerId = state.winnerId || 1;
-    isSingleMode = state.isSingleMode || false;
-    selectedSoFar = state.selectedSoFar || [];
 
     limitInput.value = state.limit || '10';
     additionalLimitInput.value = state.additionalLimit || '5';
@@ -626,11 +581,7 @@ function loadAppState() {
             }
             saveAppState();
         });
-        row.cells[3].addEventListener('input', () => {
-            calculateBonus(row);
-            updateTotals();
-            saveAppState();
-        });
+        row.cells[3].addEventListener('input', saveAppState);
         row.cells[4].addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
@@ -648,10 +599,5 @@ function loadAppState() {
         });
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
-
-    if (isSingleMode) {
-        initiateSingleMode();
-    }
-
     updateTotals();
 }
