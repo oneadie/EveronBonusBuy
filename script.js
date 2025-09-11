@@ -36,6 +36,14 @@ startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limi
 spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
+closeModal.addEventListener('click', () => {
+    multiModal.style.display = 'none';
+    if (isSingleMode) {
+        finishSingleMode && finishSingleMode();
+    } else {
+        showWinnersSection();
+    }
+});
 addMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'block';
 });
@@ -146,14 +154,7 @@ function addWinnerRow(person, price = '') {
         }
         saveAppState();
     });
-    row.cells[3].addEventListener('input', () => {
-        const index = winners.findIndex(w => w.name === person.name);
-        if (index !== -1) {
-            winners[index].price = row.cells[3].textContent.trim();
-        }
-        updateTotals();
-        saveAppState();
-    });
+    row.cells[3].addEventListener('input', saveAppState);
     row.cells[4].addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
@@ -343,29 +344,17 @@ function initiateSingleMode() {
     buttonsContainer.style.flexDirection = 'row';
 
     const furtherBtn = createButton('Крутить дальше', spinSingle);
-    const stopBtn = createButton('Стоп', () => finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable));
+    const stopBtn = createButton('Стоп', finishSingleMode);
 
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
     modalContent.appendChild(buttonsContainer);
 
-    // Update closeModal event listener to pass parameters
-    const closeModalHandler = () => {
-        multiModal.style.display = 'none';
-        if (isSingleMode) {
-            finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
-        } else {
-            showWinnersSection();
-        }
-    };
-    closeModal.removeEventListener('click', closeModalHandler); // Remove any existing listener to avoid duplicates
-    closeModal.addEventListener('click', closeModalHandler);
-
     spinSingle();
 
     function spinSingle() {
         if (availableParticipants.length === 0) {
-            finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
+            finishSingleMode();
             return;
         }
 
@@ -463,7 +452,7 @@ function initiateSingleMode() {
                     row.remove();
                     Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
                     if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
-                        finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
+                        finishSingleMode();
                     }
                 });
 
@@ -477,7 +466,7 @@ function initiateSingleMode() {
         }, animationDuration * 1000 + 300);
     }
 
-    function finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable) {
+    function finishSingleMode() {
         multiModal.style.display = 'none';
         buttonsContainer.remove();
         tempTable.remove();
@@ -540,12 +529,6 @@ function updateTotals() {
 
     totalSpentSpan.textContent = totalSpent.toFixed(2);
     totalReceivedSpan.textContent = totalReceived.toFixed(2);
-
-    const paybackPercent = totalSpent > 0 ? (totalReceived / totalSpent * 100).toFixed(2) : 0.00;
-    const paybackSpan = document.getElementById('payback-percent');
-    paybackSpan.textContent = paybackPercent + '%';
-    paybackSpan.classList.remove('green', 'red');
-    paybackSpan.classList.add(paybackPercent >= 100 ? 'green' : 'red');
 }
 
 function saveAppState() {
@@ -595,14 +578,7 @@ function loadAppState() {
             }
             saveAppState();
         });
-        row.cells[3].addEventListener('input', () => {
-            const index = winners.findIndex(w => w.name === row.cells[2].dataset.originalName);
-            if (index !== -1) {
-                winners[index].price = row.cells[3].textContent.trim();
-            }
-            updateTotals();
-            saveAppState();
-        });
+        row.cells[3].addEventListener('input', saveAppState);
         row.cells[4].addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
