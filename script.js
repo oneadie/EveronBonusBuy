@@ -28,6 +28,7 @@ const selectMoreButton = document.getElementById('select-more');
 const additionalLimitInput = document.getElementById('additional-limit');
 const totalSpentSpan = document.getElementById('total-spent');
 const totalReceivedSpan = document.getElementById('total-received');
+const paybackPercentSpan = document.getElementById('payback-percent');
 
 window.addEventListener('load', loadAppState);
 parseButton.addEventListener('click', parseTelegramInput);
@@ -36,14 +37,6 @@ startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limi
 spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
-closeModal.addEventListener('click', () => {
-    multiModal.style.display = 'none';
-    if (isSingleMode) {
-        finishSingleMode && finishSingleMode();
-    } else {
-        showWinnersSection();
-    }
-});
 addMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'block';
 });
@@ -53,6 +46,14 @@ closeAddModal.addEventListener('click', () => {
 selectMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'none';
     initiateMultiSelection(parseInt(additionalLimitInput.value));
+});
+closeModal.addEventListener('click', () => {
+    multiModal.style.display = 'none';
+    if (isSingleMode) {
+        finishSingleMode && finishSingleMode();
+    } else {
+        showWinnersSection();
+    }
 });
 
 function parseTelegramInput() {
@@ -471,7 +472,6 @@ function initiateSingleMode() {
         buttonsContainer.remove();
         tempTable.remove();
 
-        // Transfer selected winners to the main winners table
         selectedSoFar.forEach(winner => {
             Array.from(participantsTableBody.rows).forEach(row => {
                 if (row.cells[1].textContent.trim() === winner.name) row.remove();
@@ -484,6 +484,24 @@ function initiateSingleMode() {
         showWinnersSection();
         isSingleMode = false;
     }
+
+    closeModal.onclick = () => {
+        multiModal.style.display = 'none';
+        buttonsContainer.remove();
+        tempTable.remove();
+
+        selectedSoFar.forEach(winner => {
+            Array.from(participantsTableBody.rows).forEach(row => {
+                if (row.cells[1].textContent.trim() === winner.name) row.remove();
+            });
+            addWinnerRow({ name: winner.name }, winner.price || '');
+        });
+
+        participantId = participantsTableBody.rows.length + 1;
+        Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
+        showWinnersSection();
+        isSingleMode = false;
+    };
 
     function createButton(text, onClick) {
         const btn = document.createElement('button');
@@ -529,6 +547,10 @@ function updateTotals() {
 
     totalSpentSpan.textContent = totalSpent.toFixed(2);
     totalReceivedSpan.textContent = totalReceived.toFixed(2);
+
+    const paybackPercent = totalSpent > 0 ? ((totalReceived / totalSpent) * 100).toFixed(2) : 0;
+    paybackPercentSpan.textContent = `${paybackPercent}%`;
+    paybackPercentSpan.style.color = paybackPercent >= 100 ? 'green' : 'red';
 }
 
 function saveAppState() {
