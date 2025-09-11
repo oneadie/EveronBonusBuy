@@ -201,7 +201,7 @@ function displaySticker(name) {
             logDebug(`No valid image found for ${name}`);
             return;
         }
-        img.src = `emojis/${name}.${extensions[extensionIndex]}?_=${Date.now()}`; // Добавляем временную метку для избежания кэша
+        img.src = `emojis/${name}.${extensions[extensionIndex]}`; // Удалена временная метка
         extensionIndex++;
     };
 
@@ -253,11 +253,10 @@ function displaySticker(name) {
             logDebug(`Fallback end position for ${name}: end(${endX.toFixed(2)},${endY.toFixed(2)})`);
         }
 
-        // Используем minSpeed и maxSpeed как время на 1000 пикселей (мс), большее = медленнее
-        const speedFactor = minSpeed + Math.random() * (maxSpeed - minSpeed); // Время на 1000 пикселей (мс)
-        const baseDuration = (distance / 1000) * speedFactor; // Длительность на основе расстояния
-        const displayDuration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000; // Ограничение длительностью
-        const duration = Math.max(baseDuration, displayDuration); // Берем большее для медленного движения
+        const speedFactor = minSpeed + Math.random() * (maxSpeed - minSpeed);
+        const baseDuration = (distance / 1000) * speedFactor;
+        const displayDuration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000;
+        const duration = Math.max(baseDuration, displayDuration);
         const rotateSpeed = (Math.random() - 0.5) * 360;
 
         const startTime = performance.now();
