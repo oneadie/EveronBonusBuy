@@ -201,7 +201,7 @@ function displaySticker(name) {
             logDebug(`No valid image found for ${name}`);
             return;
         }
-        img.src = `emojis/${name}.${extensions[extensionIndex]}`; // Удалена временная метка
+        img.src = `emojis/${name}.${extensions[extensionIndex]}`;
         extensionIndex++;
     };
 
@@ -257,17 +257,58 @@ function displaySticker(name) {
         const baseDuration = (distance / 1000) * speedFactor;
         const displayDuration = (minDisplayTime + Math.random() * (maxDisplayTime - minDisplayTime)) * 1000;
         const duration = Math.max(baseDuration, displayDuration);
-        const rotateSpeed = (Math.random() - 0.5) * 360;
+        const rotateSpeed = (Math.random() - 0.5) * 720; // Увеличил диапазон вращения
+
+        // Выбор случайной траектории
+        const trajectoryType = Math.random() < 0.33 ? 'sine' : Math.random() < 0.66 ? 'spiral' : 'linear';
+        const sineAmplitude = 100 + Math.random() * 50; // Амплитуда волны 100-150px
+        const sineFrequency = 0.5 + Math.random() * 0.5; // Частота волны
+        const spiralRadius = 100 + Math.random() * 100; // Начальный радиус спирали
+        const spiralDecay = 0.8; // Уменьшение радиуса спирали
+        const isHorizontalSine = Math.random() < 0.5; // Горизонтальная или вертикальная волна
+        const scaleEffect = Math.random() < 0.5 ? 'pulse' : 'grow'; // Пульсация или рост
 
         const startTime = performance.now();
 
         function animate(time) {
             const elapsed = time - startTime;
             const t = Math.min(elapsed / duration, 1);
-            const x = startX + (endX - startX) * t;
-            const y = startY + (endY - startY) * t;
-            const scale = 1 + Math.sin(t * Math.PI) * 0.1;
-            const rotate = t * rotateSpeed;
+            let x = startX;
+            let y = startY;
+
+            // Расчёт траектории
+            if (trajectoryType === 'linear') {
+                x = startX + (endX - startX) * t;
+                y = startY + (endY - startY) * t;
+            } else if (trajectoryType === 'sine') {
+                const progress = (endX - startX) * t;
+                const verticalProgress = (endY - startY) * t;
+                if (isHorizontalSine) {
+                    x = startX + progress;
+                    y = startY + verticalProgress + Math.sin(progress * sineFrequency * Math.PI / 200) * sineAmplitude;
+                } else {
+                    x = startX + progress + Math.sin(verticalProgress * sineFrequency * Math.PI / 200) * sineAmplitude;
+                    y = startY + verticalProgress;
+                }
+            } else if (trajectoryType === 'spiral') {
+                const centerX = (startX + endX) / 2;
+                const centerY = (startY + endY) / 2;
+                const angle = t * Math.PI * 4; // 2 полных оборота
+                const radius = spiralRadius * (1 - t * spiralDecay);
+                x = centerX + Math.cos(angle) * radius;
+                y = centerY + Math.sin(angle) * radius;
+            }
+
+            // Эффекты масштаба
+            let scale = 1;
+            if (scaleEffect === 'pulse') {
+                scale = 1 + Math.sin(t * Math.PI * 3) * 0.15; // Пульсация (3 цикла)
+            } else if (scaleEffect === 'grow') {
+                scale = 1 + t * 0.3; // Плавный рост до +30%
+            }
+
+            // Вращение с небольшим "дрожанием"
+            const rotate = t * rotateSpeed + Math.sin(t * Math.PI * 5) * 5;
             const blur = t * 1;
             let opacity = 1;
             if (t > 0.6) {
@@ -289,7 +330,7 @@ function displaySticker(name) {
         }
 
         requestAnimationFrame(animate);
-        logDebug(`Sticker ${name} animation started: start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance ${distance.toFixed(2)}px, duration ${duration.toFixed(2)}ms, speedFactor ${speedFactor.toFixed(2)}ms/1000px, size ${size}px`);
+        logDebug(`Sticker ${name} animation started: type=${trajectoryType}, start(${startX.toFixed(2)},${startY.toFixed(2)}) to end(${endX.toFixed(2)},${endY.toFixed(2)}), distance=${distance.toFixed(2)}px, duration=${duration.toFixed(2)}ms, speedFactor=${speedFactor.toFixed(2)}ms/1000px, size=${size}px`);
     };
 
     img.onerror = () => {
