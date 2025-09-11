@@ -155,7 +155,10 @@ function addWinnerRow(person, price = '') {
         saveAppState();
     });
     row.cells[3].addEventListener('input', () => {
-        winners.find(w => w.name === person.name).price = row.cells[3].textContent.trim();
+        const index = winners.findIndex(w => w.name === person.name);
+        if (index !== -1) {
+            winners[index].price = row.cells[3].textContent.trim();
+        }
         updateTotals();
         saveAppState();
     });
@@ -348,7 +351,7 @@ function initiateSingleMode() {
     buttonsContainer.style.flexDirection = 'row';
 
     const furtherBtn = createButton('Крутить дальше', spinSingle);
-    const stopBtn = createButton('Стоп', finishSingleMode);
+    const stopBtn = createButton('Стоп', () => finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable));
 
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
@@ -358,7 +361,7 @@ function initiateSingleMode() {
 
     function spinSingle() {
         if (availableParticipants.length === 0) {
-            finishSingleMode();
+            finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
             return;
         }
 
@@ -456,7 +459,7 @@ function initiateSingleMode() {
                     row.remove();
                     Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
                     if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
-                        finishSingleMode();
+                        finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
                     }
                 });
 
@@ -470,7 +473,7 @@ function initiateSingleMode() {
         }, animationDuration * 1000 + 300);
     }
 
-    function finishSingleMode() {
+    function finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable) {
         multiModal.style.display = 'none';
         buttonsContainer.remove();
         tempTable.remove();
