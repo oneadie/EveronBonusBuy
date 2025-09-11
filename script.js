@@ -36,14 +36,6 @@ startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limi
 spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
-closeModal.addEventListener('click', () => {
-    multiModal.style.display = 'none';
-    if (isSingleMode) {
-        finishSingleMode();
-    } else {
-        showWinnersSection();
-    }
-});
 addMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'block';
 });
@@ -356,6 +348,18 @@ function initiateSingleMode() {
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
     modalContent.appendChild(buttonsContainer);
+
+    // Update closeModal event listener to pass parameters
+    const closeModalHandler = () => {
+        multiModal.style.display = 'none';
+        if (isSingleMode) {
+            finishSingleMode(selectedSoFar, tempTbody, buttonsContainer, tempTable);
+        } else {
+            showWinnersSection();
+        }
+    };
+    closeModal.removeEventListener('click', closeModalHandler); // Remove any existing listener to avoid duplicates
+    closeModal.addEventListener('click', closeModalHandler);
 
     spinSingle();
 
