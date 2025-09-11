@@ -169,7 +169,7 @@ function addWinnerRow(person, price = '') {
         deleteWinner(row, person.name);
         updateTotals();
     });
-    winners.push(person);
+    winners.push({ name: person.name, price });
     updateTotals();
     saveAppState();
 }
@@ -470,12 +470,15 @@ function initiateSingleMode() {
         multiModal.style.display = 'none';
         buttonsContainer.remove();
         tempTable.remove();
-        selectedSoFar.forEach(s => {
+
+        // Transfer selected winners to the main winners table
+        selectedSoFar.forEach(winner => {
             Array.from(participantsTableBody.rows).forEach(row => {
-                if (row.cells[1].textContent.trim() === s.name) row.remove();
+                if (row.cells[1].textContent.trim() === winner.name) row.remove();
             });
-            addWinnerRow({ name: s.name }, s.price);
+            addWinnerRow({ name: winner.name }, winner.price || '');
         });
+
         participantId = participantsTableBody.rows.length + 1;
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
         showWinnersSection();
@@ -526,12 +529,6 @@ function updateTotals() {
 
     totalSpentSpan.textContent = totalSpent.toFixed(2);
     totalReceivedSpan.textContent = totalReceived.toFixed(2);
-
-    let percent = totalSpent > 0 ? (totalReceived / totalSpent * 100).toFixed(2) : 0.00;
-    const paybackSpan = document.getElementById('payback-percent');
-    paybackSpan.textContent = percent + '%';
-    paybackSpan.classList.remove('green', 'red');
-    paybackSpan.classList.add(percent >= 100 ? 'green' : 'red');
 }
 
 function saveAppState() {
