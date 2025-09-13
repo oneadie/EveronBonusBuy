@@ -296,6 +296,20 @@ table {
     table-layout: auto;
 }
 
+#winners-table tr.green-row {
+    background: linear-gradient(45deg, #00cc88, #00ffaa);
+    box-shadow: 0 0 15px rgba(0, 204, 136, 0.6);
+}
+
+#winners-table tr.green-row td {
+    color: black;
+}
+
+#winners-table tr.green-row:hover {
+    background: linear-gradient(45deg, #00ffaa, #00cc88);
+    box-shadow: 0 0 20px rgba(0, 204, 136, 0.8);
+}
+
 th, td {
     padding: 10px 6px;
     text-align: center;
