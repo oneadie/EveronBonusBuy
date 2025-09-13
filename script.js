@@ -155,13 +155,12 @@ function addWinnerRow(person, price = '') {
         }
         saveAppState();
     });
-    row.cells[3].addEventListener('input', saveAppState);
-    row.cells[4].addEventListener('input', () => {
+    row.cells[3].addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
         saveAppState();
     });
-    row.cells[5].addEventListener('input', () => {
+    row.cells[4].addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
         saveAppState();
@@ -171,6 +170,7 @@ function addWinnerRow(person, price = '') {
         updateTotals();
     });
     winners.push({ name: person.name, price });
+    calculateBonus(row); // Initial calculation for bonus
     updateTotals();
     saveAppState();
 }
@@ -518,20 +518,34 @@ function showWinnersSection() {
 }
 
 function calculateBonus(row) {
-    const price = parseFloat(row.cells[3].innerText) || 0;
-    const payout = parseFloat(row.cells[4].innerText) || 0;
+    const priceStr = row.cells[3].innerText.trim();
+    const payoutStr = row.cells[4].innerText.trim();
+    if (!priceStr || !payoutStr) {
+        row.cells[5].innerText = '';
+        row.cells[6].innerText = '';
+        row.classList.remove('green-row');
+        return;
+    }
+    const price = parseFloat(priceStr) || 0;
+    const payout = parseFloat(payoutStr) || 0;
     const x = price > 0 ? Math.round((payout / price) * 100) : 0;
     row.cells[5].innerText = x + 'x';
 
     let bonus = '';
     if (x >= 1100) bonus = '50$';
-    else if (x >= 600 && x < 1100) bonus = '25$';
-    else if (x >= 300 && x < 600) bonus = '15$';
-    else if (x >= 200 && x < 300) bonus = '10$';
-    else if (x >= 100 && x < 200) bonus = 'утешалка 3$';
+    else if (x >= 600) bonus = '25$';
+    else if (x >= 300) bonus = '15$';
+    else if (x >= 200) bonus = '10$';
+    else if (x >= 100) bonus = 'утешалка 3$';
     else bonus = 'gg';
 
     row.cells[6].innerText = bonus;
+
+    if (bonus !== 'gg') {
+        row.classList.add('green-row');
+    } else {
+        row.classList.remove('green-row');
+    }
 }
 
 function updateTotals() {
@@ -600,23 +614,26 @@ function loadAppState() {
             }
             saveAppState();
         });
-        row.cells[3].addEventListener('input', saveAppState);
-        row.cells[4].addEventListener('input', () => {
+        row.cells[3].addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
             saveAppState();
         });
-        row.cells[5].addEventListener('input', () => {
+        row.cells[4].addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
             saveAppState();
         });
         const removeBtn = row.cells[0].querySelector('.remove-btn');
         if (removeBtn) removeBtn.addEventListener('click', () => {
-            deleteWinner(removeBtn.parentElement.parentElement, row.cells[2].textContent);
+            deleteWinner(row, row.cells[2].textContent);
             updateTotals();
         });
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
+    // Initial calculation for highlights on load
+    Array.from(winnerRows).forEach(row => {
+        calculateBonus(row);
+    });
     updateTotals();
 }
