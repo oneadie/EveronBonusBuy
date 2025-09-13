@@ -4,6 +4,7 @@ let participants = [];
 let winners = [];
 let animationDuration = 3;
 let isSingleMode = false;
+let selectedSoFar = []; // Store temporary winners from modal
 
 const parseButton = document.getElementById('parse-participants');
 const participantInput = document.getElementById('participant-input');
@@ -316,8 +317,6 @@ function initiateSingleMode() {
     multiModal.style.display = 'block';
     reelsContainer.innerHTML = '';
 
-    let selectedSoFar = [];
-
     const tempTable = document.createElement('table');
     tempTable.id = 'temp-winners-table';
     tempTable.innerHTML = `
@@ -350,6 +349,46 @@ function initiateSingleMode() {
     buttonsContainer.appendChild(furtherBtn);
     buttonsContainer.appendChild(stopBtn);
     modalContent.appendChild(buttonsContainer);
+
+    // Restore selectedSoFar from localStorage if available
+    const state = JSON.parse(localStorage.getItem('appState'));
+    if (state && state.selectedSoFar && state.isSingleMode) {
+        selectedSoFar = state.selectedSoFar;
+        selectedSoFar.forEach((winner, index) => {
+            const row = tempTbody.insertRow();
+            row.innerHTML = `
+                <td><button class="remove-btn">✕</button></td>
+                <td>${index + 1}</td>
+                <td contenteditable="true">${winner.name}</td>
+                <td contenteditable="true">${winner.price || ''}</td>
+            `;
+            row.cells[2].addEventListener('input', () => {
+                const rowIndex = Array.from(tempTbody.rows).indexOf(row);
+                selectedSoFar[rowIndex].name = row.cells[2].textContent.trim();
+                saveAppState();
+            });
+            row.cells[3].addEventListener('input', () => {
+                const rowIndex = Array.from(tempTbody.rows).indexOf(row);
+                selectedSoFar[rowIndex].price = row.cells[3].textContent.trim();
+                saveAppState();
+            });
+            row.querySelector('.remove-btn').addEventListener('click', () => {
+                const rowIndex = Array.from(tempTbody.rows).indexOf(row);
+                availableParticipants.push({ name: row.cells[2].textContent.trim() });
+                selectedSoFar.splice(rowIndex, 1);
+                row.remove();
+                Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
+                saveAppState();
+                if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
+                    finishSingleMode();
+                }
+            });
+        });
+        buttonsContainer.style.display = 'flex';
+        if (availableParticipants.length === 0) {
+            furtherBtn.style.display = 'none';
+        }
+    }
 
     spinSingle();
 
@@ -439,11 +478,13 @@ function initiateSingleMode() {
                 row.cells[2].addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
                     selectedSoFar[index].name = row.cells[2].textContent.trim();
+                    saveAppState();
                 });
 
                 row.cells[3].addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
                     selectedSoFar[index].price = row.cells[3].textContent.trim();
+                    saveAppState();
                 });
 
                 row.querySelector('.remove-btn').addEventListener('click', () => {
@@ -452,6 +493,7 @@ function initiateSingleMode() {
                     selectedSoFar.splice(index, 1);
                     row.remove();
                     Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
+                    saveAppState();
                     if (selectedSoFar.length === 0 && availableParticipants.length === 0) {
                         finishSingleMode();
                     }
@@ -461,6 +503,7 @@ function initiateSingleMode() {
                 if (availableParticipants.length === 0) {
                     furtherBtn.style.display = 'none';
                 }
+                saveAppState();
             } else {
                 console.error(`Winner mismatch. Expected: ${winner.name}, Got: ${closestItem ? closestItem.dataset.name : 'none'}`);
             }
@@ -481,8 +524,10 @@ function initiateSingleMode() {
 
         participantId = participantsTableBody.rows.length + 1;
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
-        showWinnersSection();
+        selectedSoFar = [];
         isSingleMode = false;
+        showWinnersSection();
+        saveAppState();
     }
 
     closeModal.onclick = () => {
@@ -499,8 +544,10 @@ function initiateSingleMode() {
 
         participantId = participantsTableBody.rows.length + 1;
         Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
-        showWinnersSection();
+        selectedSoFar = [];
         isSingleMode = false;
+        showWinnersSection();
+        saveAppState();
     };
 
     function createButton(text, onClick) {
@@ -571,6 +618,8 @@ function saveAppState() {
     const state = {
         participants: fetchParticipants(),
         winners,
+        selectedSoFar,
+        isSingleMode,
         participantId,
         winnerId,
         limit: limitInput.value,
@@ -595,7 +644,20 @@ function loadAppState() {
 
     winners = state.winners || [];
     winnersTableBody.innerHTML = state.winnersHtml || '';
-    if (winners.length > 0) {
+
+    // If in single mode with selectedSoFar, transfer to winners table
+    if (state.isSingleMode && state.selectedSoFar && state.selectedSoFar.length > 0) {
+        state.selectedSoFar.forEach(winner => {
+            Array.from(participantsTableBody.rows).forEach(row => {
+                if (row.cells[1].textContent.trim() === winner.name) row.remove();
+            });
+            addWinnerRow({ name: winner.name }, winner.price || '');
+        });
+        participantId = participantsTableBody.rows.length + 1;
+        Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
+    }
+
+    if (winners.length > 0 || (state.selectedSoFar && state.selectedSoFar.length > 0)) {
         winnersSection.style.display = 'block';
         controlsSection.style.display = 'none';
         participantsSection.style.display = 'none';
