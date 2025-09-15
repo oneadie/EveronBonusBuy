@@ -13,6 +13,7 @@ const startButton = document.getElementById('start-spin');
 const spinOneButton = document.getElementById('spin-one');
 const resetButtons = document.querySelectorAll('#reset-all');
 const addEveronButton = document.getElementById('add-everon');
+const bonusModeSelect = document.getElementById('bonus-mode-select');
 const participantsTableBody = document.getElementById('participants-table').querySelector('tbody');
 const winnersSection = document.getElementById('winners-section');
 const winnersTableBody = document.getElementById('winners-table').querySelector('tbody');
@@ -38,6 +39,10 @@ startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limi
 spinOneButton.addEventListener('click', initiateSingleMode);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
+bonusModeSelect.addEventListener('change', () => {
+    updateAllBonuses();
+    saveAppState();
+});
 addMoreButton.addEventListener('click', () => {
     addMoreModal.style.display = 'block';
 });
@@ -565,8 +570,9 @@ function showWinnersSection() {
 }
 
 function calculateBonus(row) {
-    const priceStr = row.cells[3].innerText.trim();
-    const payoutStr = row.cells[4].innerText.trim();
+    const mode = bonusModeSelect.value;
+    const priceStr = row.cells[3].textContent.trim();
+    const payoutStr = row.cells[4].textContent.trim();
     if (!priceStr || !payoutStr) {
         row.cells[5].innerText = '';
         row.cells[6].innerText = '';
@@ -575,24 +581,56 @@ function calculateBonus(row) {
     }
     const price = parseFloat(priceStr) || 0;
     const payout = parseFloat(payoutStr) || 0;
-    const x = price > 0 ? Math.round((payout / price) * 100) : 0;
+    if (price <= 0 || payout <= 0) {
+        row.cells[5].innerText = '';
+        row.cells[6].innerText = '';
+        row.classList.remove('green-row');
+        return;
+    }
+    const multi = payout / price;
+    const x = Math.round(multi * 100);
     row.cells[5].innerText = x + 'x';
 
-    let bonus = '';
-    if (x >= 1100) bonus = '50$';
-    else if (x >= 600) bonus = '25$';
-    else if (x >= 300) bonus = '15$';
-    else if (x >= 200) bonus = '10$';
-    else if (x >= 100) bonus = 'утешалка 3$';
-    else bonus = 'gg';
+    if (mode === 'shuffle') {
+        let bonus = '';
+        if (x >= 1100) bonus = '50$';
+        else if (x >= 600) bonus = '25$';
+        else if (x >= 300) bonus = '15$';
+        else if (x >= 200) bonus = '10$';
+        else if (x >= 100) bonus = 'утешалка 3$';
+        else bonus = 'gg';
 
-    row.cells[6].innerText = bonus;
+        row.cells[6].innerText = bonus;
 
-    if (bonus !== 'gg') {
-        row.classList.add('green-row');
+        if (bonus !== 'gg') {
+            row.classList.add('green-row');
+        } else {
+            row.classList.remove('green-row');
+        }
     } else {
-        row.classList.remove('green-row');
+        // other mode
+        if (x < 200) {
+            row.cells[6].innerText = 'gg';
+            row.classList.remove('green-row');
+        } else {
+            const excess = payout - 2 * price;
+            if (excess <= 0) {
+                row.cells[6].innerText = 'gg';
+                row.classList.remove('green-row');
+            } else {
+                const bonus = 0.1 * excess;
+                row.cells[6].innerText = Math.round(bonus) + '₽';
+                row.classList.add('green-row');
+            }
+        }
     }
+}
+
+function updateAllBonuses() {
+    Array.from(winnersTableBody.rows).forEach(row => {
+        calculateBonus(row);
+    });
+    updateTotals();
 }
 
 function updateTotals() {
@@ -624,7 +662,8 @@ function saveAppState() {
         winnerId,
         limit: limitInput.value,
         additionalLimit: additionalLimitInput.value,
-        winnersHtml: winnersTableBody.innerHTML
+        winnersHtml: winnersTableBody.innerHTML,
+        mode: bonusModeSelect.value
     };
     localStorage.setItem('appState', JSON.stringify(state));
 }
@@ -638,6 +677,9 @@ function loadAppState() {
 
     limitInput.value = state.limit || '10';
     additionalLimitInput.value = state.additionalLimit || '5';
+    if (state.mode) {
+        bonusModeSelect.value = state.mode;
+    }
 
     state.participants.forEach(p => addParticipantRow(p.name, true));
     participants = state.participants || [];
@@ -694,8 +736,5 @@ function loadAppState() {
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
     // Initial calculation for highlights on load
-    Array.from(winnerRows).forEach(row => {
-        calculateBonus(row);
-    });
-    updateTotals();
+    updateAllBonuses();
 }
