@@ -39,9 +39,18 @@
         </section>
         <section id="winners-section" style="display: none;">
             <h2>Победители</h2>
-            <button id="add-everon">Добавить everon</button>
-            <button id="add-more">Добавить новых игроков</button>
-            <button id="reset-all">Сбросить всё</button>
+            <div class="mode-selector">
+                <label for="bonus-mode-select">Режим расчета бонуса: </label>
+                <select id="bonus-mode-select">
+                    <option value="shuffle">Shuffle</option>
+                    <option value="other">10% от прибыли после 200x</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button id="add-everon">Добавить everon</button>
+                <button id="add-more">Добавить новых игроков</button>
+                <button id="reset-all">Сбросить всё</button>
+            </div>
             <table id="winners-table">
                 <thead>
                     <tr>
