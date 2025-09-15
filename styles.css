@@ -156,6 +156,25 @@ input[type="number"] {
     transition: border-color 0.3s ease;
 }
 
+#bonus-mode-select {
+    padding: 8px 12px;
+    border: 2px solid #6242ff;
+    border-radius: 8px;
+    background: #2a2a5a;
+    color: #d1d1f5;
+    font-size: 1em;
+    margin-left: 10px;
+}
+
+.mode-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    color: #a887ff;
+    font-size: 1.1em;
+}
+
 button {
     padding: 14px 20px;
     border: none;
@@ -677,6 +696,15 @@ td[contenteditable="true"]:hover {
     #spin-buttons button { width: 140px; padding: 10px 15px; font-size: 0.9em; }
     #temp-winners-table .action-buttons button { width: 24px; height: 24px; font-size: 0.5em; }
     #temp-winners-table th, #temp-winners-table td { font-size: 0.9em; }
+    .mode-selector {
+        flex-direction: column;
+        gap: 5px;
+        align-items: flex-start;
+    }
+    #bonus-mode-select {
+        margin-left: 0;
+        width: 100%;
+    }
 }
 
 @media (max-width: 600px) {
