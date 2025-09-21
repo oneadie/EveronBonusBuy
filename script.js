@@ -2,9 +2,9 @@ let participantId = 1;
 let winnerId = 1;
 let participants = [];
 let winners = [];
-let animationDuration = 3;
+let animationDuration = 3; // Total animation duration
 let isSingleMode = false;
-let selectedSoFar = []; // Store temporary winners from modal
+let selectedSoFar = [];
 
 const parseButton = document.getElementById('parse-participants');
 const participantInput = document.getElementById('participant-input');
@@ -55,6 +55,7 @@ selectMoreButton.addEventListener('click', () => {
 });
 closeModal.addEventListener('click', () => {
     multiModal.style.display = 'none';
+    document.body.style.overflow = ''; // Restore body scroll
     if (isSingleMode) {
         finishSingleMode && finishSingleMode();
     } else {
@@ -176,7 +177,7 @@ function addWinnerRow(person, price = '') {
         updateTotals();
     });
     winners.push({ name: person.name, price });
-    calculateBonus(row); // Initial calculation for bonus
+    calculateBonus(row);
     updateTotals();
     saveAppState();
 }
@@ -222,23 +223,27 @@ function initiateMultiSelection(limit) {
 
     isSingleMode = false;
     multiModal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Disable body scroll when modal is open
 
     selectedWinners.forEach((winner, index) => {
         const slotMachine = document.createElement('div');
         slotMachine.className = 'slot-machine';
         slotMachine.innerHTML = `
+            <div class="particle-bg">
+                <div class="particle-1"></div>
+                <div class="particle-2"></div>
+            </div>
             <div class="reel-mask">
                 <ul class="reel" id="reel-${index}"></ul>
             </div>
-            <div class="highlight-frame">
-                <div class="flapper"></div>
-            </div>
+            <div class="flapper"></div>
             <div class="winner-announce">Победитель: <span id="winner-name-${index}">${winner.name}</span></div>
         `;
         reelsContainer.appendChild(slotMachine);
 
         const reel = slotMachine.querySelector(`#reel-${index}`);
-        const reelItems = [...currentParticipants, ...currentParticipants, ...currentParticipants];
+        const numDuplicates = 5; // Reduced for shorter spin
+        const reelItems = Array.from({length: numDuplicates}, () => [...currentParticipants]).flat();
         reelItems.forEach(person => {
             const li = document.createElement('li');
             li.textContent = person.name;
@@ -246,20 +251,21 @@ function initiateMultiSelection(limit) {
             reel.appendChild(li);
         });
 
-        const itemHeight = reel.children[0]?.offsetHeight || 80;
-        const highlightFrame = slotMachine.querySelector('.highlight-frame');
-        const highlightTop = parseFloat(getComputedStyle(highlightFrame).top);
+        const itemHeight = 100; // 90px height + 10px gap
+        const flapper = slotMachine.querySelector('.flapper');
+        const flapperTop = parseFloat(getComputedStyle(flapper).top) || 200; // Center at 50%
         const totalHeight = reelItems.length * itemHeight;
         reel.style.height = `${totalHeight}px`;
 
         const len = currentParticipants.length;
         const ori = currentParticipants.findIndex(p => p.name === winner.name);
-        const winnerIndex = len + ori;
-        const winnerPosition = winnerIndex * itemHeight - highlightTop;
+        const randomCopy = Math.floor(Math.random() * (numDuplicates - 2)) + 1; // 1 to 3 for variety
+        const winnerIndex = randomCopy * len + ori;
+        let winnerPosition = winnerIndex * itemHeight - (flapperTop - itemHeight / 2); // Base center alignment
+        const randomOffset = (Math.random() * (itemHeight - 20)) - (itemHeight / 2 - 10); // Random within item, ±40px for 90px item
+        winnerPosition += randomOffset;
 
-        const timingFunction = len <= 15
-            ? 'cubic-bezier(0.5, 0, 0.1, 1)'
-            : 'cubic-bezier(0.25, 0, 0.1, 1)';
+        const timingFunction = 'cubic-bezier(0, 0, 0.2, 1)'; // Strong ease-out for fast start, slow end
 
         setTimeout(() => {
             reel.style.transition = `transform ${animationDuration}s ${timingFunction}`;
@@ -268,14 +274,14 @@ function initiateMultiSelection(limit) {
 
         setTimeout(() => {
             const visibleItems = Array.from(reel.children);
-            const frameCenter = highlightTop + itemHeight / 2;
+            const frameCenter = flapperTop;
             let closestItem = null;
             let minDistance = Infinity;
 
             visibleItems.forEach(item => {
                 const itemRect = item.getBoundingClientRect();
-                const itemCenter = itemRect.top + itemRect.height / 2;
-                const distance = Math.abs(itemCenter - (slotMachine.getBoundingClientRect().top + frameCenter));
+                const itemCenter = itemRect.top + itemRect.height / 2 - slotMachine.getBoundingClientRect().top;
+                const distance = Math.abs(itemCenter - frameCenter);
                 if (distance < minDistance) {
                     minDistance = distance;
                     closestItem = item;
@@ -293,6 +299,7 @@ function initiateMultiSelection(limit) {
 
     setTimeout(() => {
         multiModal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore body scroll
         selectedWinners.forEach(winner => {
             Array.from(participantsTableBody.rows).forEach(row => {
                 if (row.cells[1].textContent.trim() === winner.name) row.remove();
@@ -320,6 +327,7 @@ function initiateSingleMode() {
 
     isSingleMode = true;
     multiModal.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Disable body scroll when modal is open
     reelsContainer.innerHTML = '';
 
     const tempTable = document.createElement('table');
@@ -355,7 +363,6 @@ function initiateSingleMode() {
     buttonsContainer.appendChild(stopBtn);
     modalContent.appendChild(buttonsContainer);
 
-    // Restore selectedSoFar from localStorage if available
     const state = JSON.parse(localStorage.getItem('appState'));
     if (state && state.selectedSoFar && state.isSingleMode) {
         selectedSoFar = state.selectedSoFar;
@@ -379,7 +386,13 @@ function initiateSingleMode() {
             });
             row.querySelector('.remove-btn').addEventListener('click', () => {
                 const rowIndex = Array.from(tempTbody.rows).indexOf(row);
-                availableParticipants.push({ name: row.cells[2].textContent.trim() });
+                const removedName = row.cells[2].textContent.trim();
+                // Remove from participants table
+                Array.from(participantsTableBody.rows).forEach(row => {
+                    if (row.cells[1].textContent.trim() === removedName) row.remove();
+                });
+                participantId = participantsTableBody.rows.length + 1;
+                Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
                 selectedSoFar.splice(rowIndex, 1);
                 row.remove();
                 Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
@@ -411,18 +424,21 @@ function initiateSingleMode() {
         const slotMachine = document.createElement('div');
         slotMachine.className = 'slot-machine';
         slotMachine.innerHTML = `
+            <div class="particle-bg">
+                <div class="particle-1"></div>
+                <div class="particle-2"></div>
+            </div>
             <div class="reel-mask">
                 <ul class="reel" id="reel-0"></ul>
             </div>
-            <div class="highlight-frame">
-                <div class="flapper"></div>
-            </div>
+            <div class="flapper"></div>
             <div class="winner-announce">Победитель: <span id="winner-name-0"></span></div>
         `;
         reelsContainer.appendChild(slotMachine);
 
         const reel = slotMachine.querySelector('#reel-0');
-        const reelItems = [...currentParticipants, ...currentParticipants, ...currentParticipants];
+        const numDuplicates = 5;
+        const reelItems = Array.from({length: numDuplicates}, () => [...currentParticipants]).flat();
         reelItems.forEach(person => {
             const li = document.createElement('li');
             li.textContent = person.name;
@@ -430,20 +446,21 @@ function initiateSingleMode() {
             reel.appendChild(li);
         });
 
-        const itemHeight = reel.children[0]?.offsetHeight || 80;
-        const highlightFrame = slotMachine.querySelector('.highlight-frame');
-        const highlightTop = parseFloat(getComputedStyle(highlightFrame).top);
+        const itemHeight = 100;
+        const flapper = slotMachine.querySelector('.flapper');
+        const flapperTop = parseFloat(getComputedStyle(flapper).top) || 200;
         const totalHeight = reelItems.length * itemHeight;
         reel.style.height = `${totalHeight}px`;
 
         const len = currentParticipants.length;
         const ori = currentParticipants.findIndex(p => p.name === winner.name);
-        const winnerIndex = len + ori;
-        const winnerPosition = winnerIndex * itemHeight - highlightTop;
+        const randomCopy = Math.floor(Math.random() * (numDuplicates - 2)) + 1;
+        const winnerIndex = randomCopy * len + ori;
+        let winnerPosition = winnerIndex * itemHeight - (flapperTop - itemHeight / 2);
+        const randomOffset = (Math.random() * (itemHeight - 20)) - (itemHeight / 2 - 10);
+        winnerPosition += randomOffset;
 
-        const timingFunction = len <= 15
-            ? 'cubic-bezier(0.5, 0, 0.1, 1)'
-            : 'cubic-bezier(0.25, 0, 0.1, 1)';
+        const timingFunction = 'cubic-bezier(0, 0, 0.2, 1)';
 
         setTimeout(() => {
             reel.style.transition = `transform ${animationDuration}s ${timingFunction}`;
@@ -452,14 +469,14 @@ function initiateSingleMode() {
 
         setTimeout(() => {
             const visibleItems = Array.from(reel.children);
-            const frameCenter = highlightTop + itemHeight / 2;
+            const frameCenter = flapperTop;
             let closestItem = null;
             let minDistance = Infinity;
 
             visibleItems.forEach(item => {
                 const itemRect = item.getBoundingClientRect();
-                const itemCenter = itemRect.top + itemRect.height / 2;
-                const distance = Math.abs(itemCenter - (slotMachine.getBoundingClientRect().top + frameCenter));
+                const itemCenter = itemRect.top + itemRect.height / 2 - slotMachine.getBoundingClientRect().top;
+                const distance = Math.abs(itemCenter - frameCenter);
                 if (distance < minDistance) {
                     minDistance = distance;
                     closestItem = item;
@@ -494,7 +511,13 @@ function initiateSingleMode() {
 
                 row.querySelector('.remove-btn').addEventListener('click', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
-                    availableParticipants.push({ name: row.cells[2].textContent.trim() });
+                    const removedName = row.cells[2].textContent.trim();
+                    // Remove from participants table
+                    Array.from(participantsTableBody.rows).forEach(row => {
+                        if (row.cells[1].textContent.trim() === removedName) row.remove();
+                    });
+                    participantId = participantsTableBody.rows.length + 1;
+                    Array.from(participantsTableBody.rows).forEach((r, i) => r.cells[0].textContent = i + 1);
                     selectedSoFar.splice(index, 1);
                     row.remove();
                     Array.from(tempTbody.rows).forEach((r, i) => r.cells[1].textContent = i + 1);
@@ -517,6 +540,7 @@ function initiateSingleMode() {
 
     function finishSingleMode() {
         multiModal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore body scroll
         buttonsContainer.remove();
         tempTable.remove();
 
@@ -537,6 +561,7 @@ function initiateSingleMode() {
 
     closeModal.onclick = () => {
         multiModal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore body scroll
         buttonsContainer.remove();
         tempTable.remove();
 
@@ -608,18 +633,17 @@ function calculateBonus(row) {
             row.classList.remove('green-row');
         }
     } else {
-        // other mode
         if (x < 200) {
             row.cells[6].innerText = 'gg';
             row.classList.remove('green-row');
         } else {
-            const excess = payout;
+            const excess = payout - 2 * price;
             if (excess <= 0) {
                 row.cells[6].innerText = 'gg';
                 row.classList.remove('green-row');
             } else {
                 const bonus = 0.1 * excess;
-                row.cells[6].innerText = Math.round(bonus);
+                row.cells[6].innerText = Math.round(bonus) + '₽';
                 row.classList.add('green-row');
             }
         }
@@ -687,7 +711,6 @@ function loadAppState() {
     winners = state.winners || [];
     winnersTableBody.innerHTML = state.winnersHtml || '';
 
-    // If in single mode with selectedSoFar, transfer to winners table
     if (state.isSingleMode && state.selectedSoFar && state.selectedSoFar.length > 0) {
         state.selectedSoFar.forEach(winner => {
             Array.from(participantsTableBody.rows).forEach(row => {
@@ -735,8 +758,5 @@ function loadAppState() {
         });
         row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
     }
-    // Initial calculation for highlights on load
     updateAllBonuses();
 }
-
-
