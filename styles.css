@@ -8,7 +8,6 @@ body {
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    overflow-x: hidden;
 }
 
 header {
@@ -581,25 +580,43 @@ td[contenteditable="true"]:hover {
 .reels-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    gap: 40px;
     justify-content: center;
+    position: relative;
+    background: linear-gradient(45deg, rgba(26, 26, 59, 0.9), rgba(43, 43, 90, 0.9));
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 0 40px rgba(98, 66, 255, 0.5), 0 0 60px rgba(255, 204, 0, 0.3);
+    overflow: hidden;
+}
+
+.reels-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -250%;
+    width: 500%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 0%, transparent 30%, rgba(255, 204, 0, 0.3) 40%, rgba(255, 204, 0, 0.3) 60%, transparent 70%, transparent 100%);
+    animation: light-streak 6s infinite linear;
 }
 
 .slot-machine {
-    width: 200px;
-    height: 280px;
+    width: 300px;
+    height: 400px;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(45deg, #1a1a3b, #2b2b5a);
-    border: 6px solid #6242ff;
+    background: transparent;
     border-radius: 20px;
-    box-shadow: 0 0 35px rgba(98, 66, 255, 0.8);
+    box-shadow: 0 0 30px rgba(98, 66, 255, 0.6);
+    perspective: 1200px;
 }
 
 .reel-mask {
     height: 100%;
     overflow: hidden;
     position: relative;
+    background: transparent;
 }
 
 .reel {
@@ -609,42 +626,34 @@ td[contenteditable="true"]:hover {
     position: absolute;
     width: 100%;
     top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .reel li {
-    height: 80px;
-    line-height: 80px;
+    height: 90px;
+    line-height: 90px;
     text-align: center;
-    font-size: 1.5em;
-    color: #d1d1f5;
-    background: linear-gradient(45deg, #2a2a5a, #3b3b7a);
-    border-bottom: 4px solid #6242ff;
-    animation: glow 1.8s infinite alternate;
-    opacity: 0.85;
-    transition: opacity 0.4s, transform 0.4s;
+    font-size: 1.6em;
+    color: #ffffff;
+    background: linear-gradient(45deg, #3b0087, #00d4ff);
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(98, 66, 255, 0.7);
+    opacity: 0.9;
+    transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+    transform: perspective(1200px) rotateX(5deg) translateZ(0);
     position: relative;
+    overflow: hidden;
+    animation: glow 2s infinite alternate;
 }
 
 .reel li.winner {
     opacity: 1;
-    transform: scale(1.25);
-    background: linear-gradient(45deg, #6242ff, #a887ff);
-    color: #ffffff;
-    animation: winner-glow 1.2s infinite alternate;
-    box-shadow: 0 0 30px rgba(98, 66, 255, 0.9);
-}
-
-.highlight-frame {
-    position: absolute;
-    top: 100px;
-    left: 0;
-    width: 100%;
-    height: 80px;
-    border: 6px dashed #a887ff;
-    background: rgba(98, 66, 255, 0.2);
-    pointer-events: none;
-    animation: frame-pulse 2.5s infinite;
-    z-index: 5;
+    transform: perspective(1200px) rotateX(0deg) translateZ(60px) scale(1.1);
+    background: linear-gradient(45deg, #ffd700, #ff8c00);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.9), 0 0 60px rgba(255, 140, 0, 0.8);
+    animation: winner-sparkle 1.3s infinite;
 }
 
 .flapper {
@@ -653,28 +662,121 @@ td[contenteditable="true"]:hover {
     left: 0;
     width: 100%;
     height: 6px;
-    background: #00ffcc;
+    background: linear-gradient(90deg, #00ffcc, #ffd700);
     transform: translateY(-50%);
-    box-shadow: 0 0 20px #00ffcc, 0 0 30px rgba(0, 255, 204, 0.7);
+    box-shadow: 0 0 20px #00ffcc, 0 0 30px rgba(255, 215, 0, 0.8);
     z-index: 6;
+    animation: flapper-glow 1.5s infinite alternate;
 }
 
 .winner-announce {
     text-align: center;
-    margin: 40px 0 0;
+    margin: 25px 0 0;
     font-size: 2em;
     color: #ffffff;
-    background: linear-gradient(45deg, #6242ff, #a887ff);
+    background: linear-gradient(45deg, #ffd700, #ff8c00);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 20px rgba(98, 66, 255, 0.7);
-    animation: fade-in 1.2s ease-in;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    animation: fade-in 1s ease-in;
 }
 
-#temp-winners-list li {
-    font-size: 1.2em;
-    margin: 5px 0;
-    color: #a887ff;
+.particle-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(98, 66, 255, 0.3) 0%, transparent 70%);
+    z-index: -1;
+    overflow: hidden;
+}
+
+.particle-bg::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+    animation: sparkle 2.5s infinite linear;
+    top: 40%;
+    left: 30%;
+}
+
+.particle-bg::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 255, 204, 0.8);
+    border-radius: 50%;
+    animation: sparkle 3s infinite linear reverse;
+    top: 60%;
+    left: 70%;
+}
+
+.particle-bg .particle-1 {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 105, 180, 0.7);
+    border-radius: 50%;
+    animation: sparkle 2.8s infinite linear;
+    top: 20%;
+    left: 50%;
+}
+
+.particle-bg .particle-2 {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: rgba(138, 43, 226, 0.8);
+    border-radius: 50%;
+    animation: sparkle 2.2s infinite linear reverse;
+    top: 80%;
+    left: 20%;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 12px rgba(98, 66, 255, 0.6); }
+    to { box-shadow: 0 0 25px rgba(98, 66, 255, 0.9), 0 0 40px rgba(98, 66, 255, 0.5); }
+}
+
+@keyframes winner-sparkle {
+    0% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 140, 0, 0.8); }
+    50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1), 0 0 60px rgba(255, 140, 0, 0.9); }
+    100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 140, 0, 0.8); }
+}
+
+@keyframes flapper-glow {
+    from { box-shadow: 0 0 20px #00ffcc, 0 0 30px rgba(255, 215, 0, 0.8); }
+    to { box-shadow: 0 0 30px #00ffcc, 0 0 50px rgba(255, 215, 0, 0.9); }
+}
+
+@keyframes sparkle {
+    0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.8;
+    }
+    50% {
+        transform: translate(120px, -120px) scale(1.6);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translate(-120px, 120px) scale(1);
+        opacity: 0.8;
+    }
+}
+
+@keyframes light-streak {
+    0% { transform: translateX(-250%); }
+    100% { transform: translateX(250%); }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateY(-25px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 600px) {
@@ -683,11 +785,10 @@ td[contenteditable="true"]:hover {
     section { padding: 20px; max-width: 100%; }
     #participant-input { height: 140px; font-size: 1.1em; }
     button { padding: 12px 20px; width: 100%; max-width: 200px; font-size: 1em; }
-    .reel li { font-size: 1.2em; height: 70px; line-height: 70px; }
-    .highlight-frame { top: 85px; height: 70px; }
-    .winner-announce { font-size: 1.5em; margin: 30px 0 0; }
+    .reel li { font-size: 1.3em; height: 70px; line-height: 70px; }
+    .slot-machine { width: 220px; height: 300px; }
+    .winner-announce { font-size: 1.6em; margin: 20px 0 0; }
     input[type="number"] { width: 120px; }
-    .slot-machine { width: 150px; height: 220px; }
     .modal-content { width: 90%; }
     #winners-section { margin-top: 20px; }
     #winners-section .button-group { gap: 10px; margin-bottom: 15px; }
@@ -719,25 +820,4 @@ td[contenteditable="true"]:hover {
     #winners-table th:nth-child(5), #winners-table td:nth-child(5) { width: 15%; }
     #winners-table th:nth-child(6), #winners-table td:nth-child(6) { width: 10%; }
     #winners-table th:nth-child(7), #winners-table td:nth-child(7) { width: 25%; }
-}
-
-@keyframes glow {
-    from { box-shadow: 0 0 8px rgba(98, 66, 255, 0.5); }
-    to { box-shadow: 0 0 20px rgba(98, 66, 255, 0.9); }
-}
-
-@keyframes winner-glow {
-    from { box-shadow: 0 0 15px #6242ff; }
-    to { box-shadow: 0 0 40px #6242ff; }
-}
-
-@keyframes frame-pulse {
-    0% { border-color: #a887ff; }
-    50% { border-color: #6242ff; }
-    100% { border-color: #a887ff; }
-}
-
-@keyframes fade-in {
-    from { opacity: 0; transform: translateY(-25px); }
-    to { opacity: 1; transform: translateY(0); }
 }
