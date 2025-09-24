@@ -637,13 +637,13 @@ function calculateBonus(row) {
             row.cells[6].innerText = 'gg';
             row.classList.remove('green-row');
         } else {
-            const excess = payout - 2 * price;
+            const excess = payout;
             if (excess <= 0) {
                 row.cells[6].innerText = 'gg';
                 row.classList.remove('green-row');
             } else {
                 const bonus = 0.1 * excess;
-                row.cells[6].innerText = Math.round(bonus) + '₽';
+                row.cells[6].innerText = Math.round(bonus);
                 row.classList.add('green-row');
             }
         }
@@ -760,3 +760,4 @@ function loadAppState() {
     }
     updateAllBonuses();
 }
+
