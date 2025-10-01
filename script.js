@@ -11,6 +11,7 @@ const participantInput = document.getElementById('participant-input');
 const limitInput = document.getElementById('winner-limit');
 const startButton = document.getElementById('start-spin');
 const spinOneButton = document.getElementById('spin-one');
+const transferAllButton = document.getElementById('transfer-all');
 const resetButtons = document.querySelectorAll('#reset-all');
 const addEveronButton = document.getElementById('add-everon');
 const bonusModeSelect = document.getElementById('bonus-mode-select');
@@ -37,6 +38,7 @@ parseButton.addEventListener('click', parseTelegramInput);
 limitInput.addEventListener('input', saveAppState);
 startButton.addEventListener('click', () => initiateMultiSelection(parseInt(limitInput.value)));
 spinOneButton.addEventListener('click', initiateSingleMode);
+transferAllButton.addEventListener('click', transferAllToWinners);
 resetButtons.forEach(button => button.addEventListener('click', resetApplication));
 addEveronButton.addEventListener('click', () => addWinnerRow({ name: 'everon' }));
 bonusModeSelect.addEventListener('change', () => {
@@ -122,8 +124,15 @@ function addParticipantRow(name = '', isLoading = false) {
             <button class="remove-btn">✕</button>
         </td>
     `;
+    const editableCell = row.querySelector('td[contenteditable]');
+    // Add paste event listener to strip styles
+    editableCell.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
     if (!isLoading) {
-        row.querySelector('td[contenteditable]').addEventListener('input', saveAppState);
+        editableCell.addEventListener('input', saveAppState);
         row.querySelector('.remove-btn').addEventListener('click', () => {
             row.remove();
             participantId = participantsTableBody.rows.length + 1;
@@ -154,20 +163,31 @@ function addWinnerRow(person, price = '') {
         <td></td>
         <td></td>
     `;
-    row.cells[2].addEventListener('input', () => {
-        const name = row.cells[2].textContent.trim();
+    const nameCell = row.cells[2];
+    const priceCell = row.cells[3];
+    const payoutCell = row.cells[4];
+    // Add paste event listeners to strip styles
+    [nameCell, priceCell, payoutCell].forEach(cell => {
+        cell.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+    });
+    nameCell.addEventListener('input', () => {
+        const name = nameCell.textContent.trim();
         const index = winners.findIndex(w => w.name === person.name);
         if (index !== -1) {
             winners[index].name = name;
         }
         saveAppState();
     });
-    row.cells[3].addEventListener('input', () => {
+    priceCell.addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
         saveAppState();
     });
-    row.cells[4].addEventListener('input', () => {
+    payoutCell.addEventListener('input', () => {
         calculateBonus(row);
         updateTotals();
         saveAppState();
@@ -194,6 +214,28 @@ function deleteWinner(row, name) {
 function resetApplication() {
     localStorage.clear();
     window.location.reload();
+}
+
+function transferAllToWinners() {
+    const currentParticipants = fetchParticipants();
+    const availableParticipants = currentParticipants.filter(p => !winners.some(w => w.name === p.name));
+
+    if (currentParticipants.length === 0) {
+        alert('Добавьте участников!');
+        return;
+    }
+
+    // Clear participants table
+    participantsTableBody.innerHTML = '';
+    participantId = 1;
+
+    // Add all available participants to winners in their original order
+    availableParticipants.forEach(winner => {
+        addWinnerRow({ name: winner.name });
+    });
+
+    showWinnersSection();
+    saveAppState();
 }
 
 function initiateMultiSelection(limit) {
@@ -374,14 +416,24 @@ function initiateSingleMode() {
                 <td contenteditable="true">${winner.name}</td>
                 <td contenteditable="true">${winner.price || ''}</td>
             `;
-            row.cells[2].addEventListener('input', () => {
+            const nameCell = row.cells[2];
+            const priceCell = row.cells[3];
+            // Add paste event listeners to strip styles
+            [nameCell, priceCell].forEach(cell => {
+                cell.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                    document.execCommand('insertText', false, text);
+                });
+            });
+            nameCell.addEventListener('input', () => {
                 const rowIndex = Array.from(tempTbody.rows).indexOf(row);
-                selectedSoFar[rowIndex].name = row.cells[2].textContent.trim();
+                selectedSoFar[rowIndex].name = nameCell.textContent.trim();
                 saveAppState();
             });
-            row.cells[3].addEventListener('input', () => {
+            priceCell.addEventListener('input', () => {
                 const rowIndex = Array.from(tempTbody.rows).indexOf(row);
-                selectedSoFar[rowIndex].price = row.cells[3].textContent.trim();
+                selectedSoFar[rowIndex].price = priceCell.textContent.trim();
                 saveAppState();
             });
             row.querySelector('.remove-btn').addEventListener('click', () => {
@@ -497,15 +549,26 @@ function initiateSingleMode() {
                     <td contenteditable="true"></td>
                 `;
 
-                row.cells[2].addEventListener('input', () => {
+                const nameCell = row.cells[2];
+                const priceCell = row.cells[3];
+                // Add paste event listeners to strip styles
+                [nameCell, priceCell].forEach(cell => {
+                    cell.addEventListener('paste', (e) => {
+                        e.preventDefault();
+                        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                        document.execCommand('insertText', false, text);
+                    });
+                });
+
+                nameCell.addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
-                    selectedSoFar[index].name = row.cells[2].textContent.trim();
+                    selectedSoFar[index].name = nameCell.textContent.trim();
                     saveAppState();
                 });
 
-                row.cells[3].addEventListener('input', () => {
+                priceCell.addEventListener('input', () => {
                     const index = Array.from(tempTbody.rows).indexOf(row);
-                    selectedSoFar[index].price = row.cells[3].textContent.trim();
+                    selectedSoFar[index].price = priceCell.textContent.trim();
                     saveAppState();
                 });
 
@@ -731,22 +794,33 @@ function loadAppState() {
 
     const winnerRows = winnersTableBody.rows;
     for (let row of winnerRows) {
-        row.cells[2].addEventListener('input', () => {
-            const name = row.cells[2].textContent.trim();
-            const oldName = winners.find(w => w.name === row.cells[2].dataset.originalName)?.name;
+        const nameCell = row.cells[2];
+        const priceCell = row.cells[3];
+        const payoutCell = row.cells[4];
+        // Add paste event listeners to strip styles
+        [nameCell, priceCell, payoutCell].forEach(cell => {
+            cell.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            alligator});
+        });
+        nameCell.addEventListener('input', () => {
+            const name = nameCell.textContent.trim();
+            const oldName = winners.find(w => w.name === nameCell.dataset.originalName)?.name;
             const index = winners.findIndex(w => w.name === oldName);
             if (index !== -1) {
                 winners[index].name = name;
-                row.cells[2].dataset.originalName = name;
+                nameCell.dataset.originalName = name;
             }
             saveAppState();
         });
-        row.cells[3].addEventListener('input', () => {
+        priceCell.addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
             saveAppState();
         });
-        row.cells[4].addEventListener('input', () => {
+        payoutCell.addEventListener('input', () => {
             calculateBonus(row);
             updateTotals();
             saveAppState();
@@ -756,8 +830,7 @@ function loadAppState() {
             deleteWinner(row, row.cells[2].textContent);
             updateTotals();
         });
-        row.cells[2].dataset.originalName = row.cells[2].textContent.trim();
+        nameCell.dataset.originalName = nameCell.textContent.trim();
     }
     updateAllBonuses();
 }
-
