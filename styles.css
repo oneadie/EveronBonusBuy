@@ -205,6 +205,11 @@ button:active {
     background: linear-gradient(45deg, #00ffaa, #00cc88);
 }
 
+#transfer-all{
+    background: linear-gradient(45deg, #006eff ,  #00becc);
+    color: #ffffff;
+}
+
 #spin-one {
     background: linear-gradient(45deg, #ff9500, #ffcc00);
     color: #ffffff;
@@ -326,6 +331,34 @@ table {
 #winners-table tr.green-row:hover {
     background: linear-gradient(45deg, #00ffaa, #00cc88);
     box-shadow: 0 0 20px rgba(0, 204, 136, 0.8);
+}
+
+#winners-table tr.consolation-row {
+    background: linear-gradient(45deg, #fff3cd, #ffeeba);
+    box-shadow: 0 0 15px rgba(255, 243, 205, 0.6);
+}
+
+#winners-table tr.consolation-row td {
+    color: black;
+}
+
+#winners-table tr.consolation-row:hover {
+    background: linear-gradient(45deg, #ffeeba, #fff3cd);
+    box-shadow: 0 0 20px rgba(255, 243, 205, 0.8);
+}
+
+#winners-table tr.bonus-row {
+    background: linear-gradient(45deg, #cce5ff, #b3d7ff);
+    box-shadow: 0 0 15px rgba(204, 229, 255, 0.6);
+}
+
+#winners-table tr.bonus-row td {
+    color: black;
+}
+
+#winners-table tr.bonus-row:hover {
+    background: linear-gradient(45deg, #b3d7ff, #cce5ff);
+    box-shadow: 0 0 20px rgba(204, 229, 255, 0.8);
 }
 
 th, td {
